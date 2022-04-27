@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+# mbed
+.build
+.mbed
+projectfiles
+*.py*
+mbed-os
+
