@@ -36,4 +36,5 @@
 .mbed
 projectfiles
 *.py*
+mbed-os
 
