@@ -36,5 +36,6 @@
 .mbed
 projectfiles
 *.py*
-mbed-os
+mbed-os/
+BUILD/
 
