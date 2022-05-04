@@ -22,6 +22,9 @@ DFRobot_RGBLCD lcd(16, 2, D14, D15);
 
 int buttonMode = 0;
 bool inAlarmMode = false;
+char test[] = "Hello";
+int cursorPos = 15;
+
 
 void defaultScreen();
 
@@ -104,5 +107,13 @@ void weatherScreen()
 void newsScreen()
 {
     lcd.clear();
-    lcd.printf("News!");
+    lcd.setCursor(0, 0);
+    lcd.printf("BBC News:");
+    
+    lcd.setCursor(cursorPos, 1);
+    lcd.printf("%s", test);
+
+    cursorPos--;
+    if(cursorPos < 0)
+        cursorPos = 15;
 }
