@@ -14,6 +14,9 @@ DigitalOut led1(LED1);
 
 InterruptIn button1(PA_1, PullDown);
 InterruptIn button2(PA_0, PullDown);
+InterruptIn button3(PD_14, PullDown);
+InterruptIn button4(PA_3, PullDown);
+InterruptIn button5(PA_4, PullDown);
 
 DFRobot_RGBLCD lcd(16, 2, D14, D15);
 
