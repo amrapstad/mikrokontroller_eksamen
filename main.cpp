@@ -17,6 +17,8 @@ InterruptIn button2(PA_0, PullDown);
 
 DFRobot_RGBLCD lcd(16, 2, D14, D15);
 
+int buttonMode = 0;
+bool inAlarmMode = false;
 
 void defaultScreen();
 
@@ -32,23 +34,25 @@ int main()
 {
     lcd.init();
 
-    int buttonMode = 0;
-
-    lcd.printf("Hello!");
-
     while(true)
     {
         led1 = !led1;
 
-        if(button1.read() && buttonMode <= 3)
+        if(button1.read() && buttonMode <= 2 && !inAlarmMode)
             buttonMode++;
-        else if(button1.read())
+        else if(button1.read() && !inAlarmMode)
             buttonMode = 0;
 
         switch(buttonMode)
         {
             case 0:
-                defaultScreen();
+                if(button2.read())
+                    inAlarmMode = !inAlarmMode;
+
+                if(!inAlarmMode)
+                    defaultScreen();
+                else
+                    alarmScreen();
                 break;
 
             case 1:
