@@ -1,5 +1,27 @@
 [
     {
+        "module": "DFRobot_RGBLCD.o",
+        "size": {
+            ".text": 618,
+            ".data": 0,
+            ".bss": 50,
+            ".text-delta": 0,
+            ".data-delta": 0,
+            ".bss-delta": 0
+        }
+    },
+    {
+        "module": "HTS221\\HTS221Sensor.o",
+        "size": {
+            ".text": 66,
+            ".data": 0,
+            ".bss": 0,
+            ".text-delta": 0,
+            ".data-delta": 0,
+            ".bss-delta": 0
+        }
+    },
+    {
         "module": "[lib]\\c_w.l",
         "size": {
             ".text": 4202,
@@ -46,9 +68,9 @@
     {
         "module": "main.o",
         "size": {
-            ".text": 182,
+            ".text": 458,
             ".data": 0,
-            ".bss": 28,
+            ".bss": 392,
             ".text-delta": 0,
             ".data-delta": 0,
             ".bss-delta": 0
@@ -68,7 +90,7 @@
     {
         "module": "mbed-os\\connectivity",
         "size": {
-            ".text": 244,
+            ".text": 527,
             ".data": 0,
             ".bss": 0,
             ".text-delta": 0,
@@ -79,7 +101,7 @@
     {
         "module": "mbed-os\\drivers",
         "size": {
-            ".text": 688,
+            ".text": 1630,
             ".data": 0,
             ".bss": 0,
             ".text-delta": 0,
@@ -90,7 +112,7 @@
     {
         "module": "mbed-os\\hal",
         "size": {
-            ".text": 1916,
+            ".text": 2252,
             ".data": 8,
             ".bss": 114,
             ".text-delta": 0,
@@ -101,9 +123,9 @@
     {
         "module": "mbed-os\\platform",
         "size": {
-            ".text": 9562,
+            ".text": 9614,
             ".data": 64,
-            ".bss": 357,
+            ".bss": 361,
             ".text-delta": 0,
             ".data-delta": 0,
             ".bss-delta": 0
@@ -134,9 +156,9 @@
     {
         "module": "mbed-os\\targets",
         "size": {
-            ".text": 12598,
+            ".text": 20763,
             ".data": 8,
-            ".bss": 1037,
+            ".bss": 1595,
             ".text-delta": 0,
             ".data-delta": 0,
             ".bss-delta": 0
@@ -144,9 +166,9 @@
     },
     {
         "summary": {
-            "static_ram": 10425,
+            "static_ram": 11401,
             "static_ram_delta": 0,
-            "total_flash": 40673,
+            "total_flash": 51411,
             "total_flash_delta": 0
         }
     }
