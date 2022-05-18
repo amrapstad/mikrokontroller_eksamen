@@ -73,3 +73,91 @@ nsapi_size_or_error_t read_response(Socket *socket, char *buffer,
 
   return received_bytes;
 }
+
+void connect_to_BBC(char temp[])
+{
+    /*---News Feed Get Request---*/
+    NetworkInterface *network = NetworkInterface::get_default_instance();
+
+    if(!network)
+    {
+        printf("Failed to get the default network instance\n");
+        while(true);
+    }
+
+    nsapi_size_or_error_t result;
+
+    do
+    {
+        printf("Connecting to network...\n");
+        result = network->connect();
+
+        if(result != 0)
+        {
+            printf("Failed to connect to network: %d\n", result);
+        }
+    } while(result != 0);
+
+    printf("Connected to network successfully\n");
+
+
+    SocketAddress address;
+    network->get_ip_address(&address);
+
+    TCPSocket *socket = new TCPSocket;
+
+    if(socket == nullptr)
+    {
+        printf("Failed to allocate socket instance\n");
+        while(true);
+    }
+
+    socket->open(network);
+
+    const char *host = "feeds.bbci.co.uk";
+    //const char *host = "example.org";
+    result = network->gethostbyname(host, &address);
+
+    if(result != NSAPI_ERROR_OK)
+    {
+        printf("Failed to get IP address of host %s: %d\n", host, result);
+        while(1);
+    }
+
+    printf("IP address of server %s is %s\n", host, address.get_ip_address());
+
+    address.set_port(80);
+
+    result = socket->connect(address);
+
+    if(result != NSAPI_ERROR_OK)
+    {
+        printf("Failed to connect to server at %s: %d\n", host, result);
+        while(1);
+    }
+
+    printf("Successfully connected to server %s\n", host);
+
+    const char request[] = "GET /news/world/rss.xml# HTTP/1.1\r\n"
+                           "Host: feeds.bbci.co.uk\r\n"
+                           "Connection: close\r\n"
+                           "\r\n";
+
+    result = send_request(socket, request);
+
+
+    static constexpr size_t HTTP_RESPONSE_BUF_SIZE = 20000;
+    static char response[HTTP_RESPONSE_BUF_SIZE] = { 0 };
+    int remaining_bytes = HTTP_RESPONSE_BUF_SIZE;
+    int received_bytes = 0;
+
+    result = read_response(socket, response, HTTP_RESPONSE_BUF_SIZE);
+
+    if(result < 0)
+    {
+        printf("Failed to read response: %d\n", result);
+    }
+
+    response[result] = '\0';
+    printf("\nThe HTTP GET response:\n%s\n", response);
+}
