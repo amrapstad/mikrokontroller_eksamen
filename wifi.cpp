@@ -159,5 +159,6 @@ void connect_to_BBC(char temp[])
     }
 
     response[result] = '\0';
-    printf("\nThe HTTP GET response:\n%s\n", response);
+    //printf("\nThe HTTP GET response:\n%s\n", response);
+    strcpy(temp, response);
 }
