@@ -3,14 +3,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "BufferedSerial.h"
+#include "NetworkInterface.h"
+#include "SocketAddress.h"
+#include "TCPSocket.h"
 #include "mbed.h"
 #include "DFRobot_RGBLCD.h"
+#include "nsapi_types.h"
 
 
 // Blinking rate in milliseconds
 #define BLINKING_RATE     1000ms
 
 DigitalOut led1(LED1);
+
+BufferedSerial pc(USBTX, USBRX, 115200);
 
 InterruptIn button1(PA_1, PullDown);
 InterruptIn button2(PA_0, PullDown);
@@ -25,7 +32,6 @@ bool inAlarmMode = false;
 char test[] = "Hello";
 int cursorPos = 15;
 
-
 void defaultScreen();
 
 void alarmScreen();
@@ -38,6 +44,59 @@ void newsScreen();
 
 int main()
 {
+    printf("Hallo\n");
+
+    /*---News Feed Get Request---*/
+    NetworkInterface *network = NetworkInterface::get_default_instance();
+
+    if(!network)
+    {
+        printf("Failed to get the default network instance\n");
+        while(true);
+    }
+
+    nsapi_size_or_error_t result;
+
+    do
+    {
+        printf("Connecting to network...\n");
+        result = network->connect();
+
+        if(result != 0)
+        {
+            printf("Failed to connect to network: %d\n", result);
+        }
+    } while(result != 0);
+
+    printf("Connected to network successfully\n");
+
+
+    SocketAddress address;
+    network->get_ip_address(&address);
+
+    TCPSocket *socket = new TCPSocket;
+
+    if(socket == nullptr)
+    {
+        printf("Failed to allocate socket instance\n");
+        while(true);
+    }
+
+    socket->open(network);
+
+    const char *host = "http://feeds.bbci.co.uk/news/world/rss.xml#";
+    result = network->gethostbyname(host, &address);
+
+    if(result != NSAPI_ERROR_OK)
+    {
+        printf("Failed to get IP address of host %s: %d\n", host, result);
+    }
+
+    printf("IP address of server %s is %s\n", host, address.get_ip_address());
+
+
+
+
     lcd.init();
 
     while(true)
@@ -106,6 +165,10 @@ void weatherScreen()
 
 void newsScreen()
 {
+    // lcd.setCursor(horizontal, verical)
+    // Horizontal: 0-15
+    // Vertical: 0-1
+
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.printf("BBC News:");
