@@ -10,6 +10,7 @@
 #include "mbed.h"
 #include "DFRobot_RGBLCD.h"
 #include "nsapi_types.h"
+#include "wifi.h"
 
 
 // Blinking rate in milliseconds
@@ -19,11 +20,11 @@ DigitalOut led1(LED1);
 
 BufferedSerial pc(USBTX, USBRX, 115200);
 
-InterruptIn button1(PA_1, PullDown);
-InterruptIn button2(PA_0, PullDown);
-InterruptIn button3(PD_14, PullDown);
-InterruptIn button4(PA_3, PullDown);
-InterruptIn button5(PA_4, PullDown);
+DigitalIn button1(PA_1, PullDown);
+DigitalIn button2(PA_0, PullDown);
+DigitalIn button3(PD_14, PullDown);
+DigitalIn button4(PA_3, PullDown);
+DigitalIn button5(PA_4, PullDown);
 
 DFRobot_RGBLCD lcd(16, 2, D14, D15);
 
@@ -84,17 +85,55 @@ int main()
 
     socket->open(network);
 
-    const char *host = "http://feeds.bbci.co.uk/news/world/rss.xml#";
+    const char *host = "feeds.bbci.co.uk";
+    //const char *host = "example.org";
     result = network->gethostbyname(host, &address);
 
     if(result != NSAPI_ERROR_OK)
     {
         printf("Failed to get IP address of host %s: %d\n", host, result);
+        while(1);
     }
 
     printf("IP address of server %s is %s\n", host, address.get_ip_address());
 
+    address.set_port(80);
 
+    result = socket->connect(address);
+
+    if(result != NSAPI_ERROR_OK)
+    {
+        printf("Failed to coonect to server at %s: %d\n", host, result);
+        while(1);
+    }
+
+    printf("Successfully connected to server %s\n", host);
+
+    const char request[] = "GET / HTTP/1.1\r\n"
+                           "Host: feeds.bbci.co.uk/news/world/rss.xml#\r\n"
+                           "Connection: close\r\n"
+                           "\r\n";
+
+    result = send_request(socket, request);
+
+    if(result < 0)
+    {
+        printf("Failed to send request: %d\n", result);
+    }
+
+    static constexpr size_t HTTP_RESPONSE_BUF_SIZE = 2000;
+
+    static char response[HTTP_RESPONSE_BUF_SIZE];
+
+    result = read_response(socket, response, HTTP_RESPONSE_BUF_SIZE);
+
+    if(result < 0)
+    {
+        printf("Failed to read response: %d\n", result);
+    }
+
+    response[result] = '\0';
+    printf("\nThe HTTP GET response:\n%s\n", response);
 
 
     lcd.init();
