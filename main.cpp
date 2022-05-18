@@ -109,21 +109,18 @@ int main()
 
     printf("Successfully connected to server %s\n", host);
 
-    const char request[] = "GET / HTTP/1.1\r\n"
-                           "Host: feeds.bbci.co.uk/news/world/rss.xml#\r\n"
+    const char request[] = "GET /news/world/rss.xml# HTTP/1.1\r\n"
+                           "Host: feeds.bbci.co.uk\r\n"
                            "Connection: close\r\n"
                            "\r\n";
 
     result = send_request(socket, request);
 
-    if(result < 0)
-    {
-        printf("Failed to send request: %d\n", result);
-    }
 
-    static constexpr size_t HTTP_RESPONSE_BUF_SIZE = 2000;
-
-    static char response[HTTP_RESPONSE_BUF_SIZE];
+    static constexpr size_t HTTP_RESPONSE_BUF_SIZE = 20000;
+    static char response[HTTP_RESPONSE_BUF_SIZE] = { 0 };
+    int remaining_bytes = HTTP_RESPONSE_BUF_SIZE;
+    int received_bytes = 0;
 
     result = read_response(socket, response, HTTP_RESPONSE_BUF_SIZE);
 
@@ -134,6 +131,7 @@ int main()
 
     response[result] = '\0';
     printf("\nThe HTTP GET response:\n%s\n", response);
+
 
 
     lcd.init();
