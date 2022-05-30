@@ -1,6 +1,5 @@
 #include "wifi.h"
-#include "mbed.h"
-#include <string>
+#include "structs.h"
 
 nsapi_size_or_error_t send_request(Socket *socket, const char *request) {
   if (socket == nullptr || request == nullptr) {
@@ -75,7 +74,7 @@ nsapi_size_or_error_t read_response(Socket *socket, char *buffer,
   return received_bytes;
 }
 
-void connect_to_BBC()
+void connect_to_BBC(struct NewsStrings *strings)
 {
     /*---News Feed Get Request---*/
     NetworkInterface *network = NetworkInterface::get_default_instance();
@@ -162,8 +161,6 @@ void connect_to_BBC()
 
     response[result] = '\0';
     printf("\nThe HTTP GET response:\n%s\n", response);
-   /* 
-    char *news1;
-    char *news2;
-    char *news3; */
+   
+   
 }

@@ -11,6 +11,7 @@
 #include "DFRobot_RGBLCD.h"
 #include "nsapi_types.h"
 #include "wifi.h"
+#include "structs.h"
 
 // Blinking rate in milliseconds
 #define BLINKING_RATE     1000ms
