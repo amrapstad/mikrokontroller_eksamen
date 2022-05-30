@@ -160,8 +160,10 @@ void connect_to_BBC(struct NewsStrings *pNews)
     int received_bytes = 0;
 
     result = read_response(socket, response, HTTP_RESPONSE_BUF_SIZE);
+
     delete socket;
     socket = nullptr;
+
 
     if(result < 0)
     {
