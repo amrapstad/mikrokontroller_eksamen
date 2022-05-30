@@ -44,8 +44,11 @@ void newsScreen();
 
 int main()
 {
-    //struct NewsStrings *pNews = new NewsStrings;
-    connect_to_BBC();
+    struct NewsStrings *pNews = new NewsStrings;
+    connect_to_BBC(pNews);
+    printf("%s\n", pNews->firstString);
+    printf("%s\n", pNews->secondString);
+    printf("%s\n", pNews->thirdString);
 
     lcd.init();
 

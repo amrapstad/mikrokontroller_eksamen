@@ -81,7 +81,7 @@ nsapi_size_or_error_t read_response(Socket *socket, char *buffer,
 
 
 
-void connect_to_BBC(/*struct NewsStrings *pNews*/)
+void connect_to_BBC(struct NewsStrings *pNews)
 {
     /*---News Feed Get Request---*/
     NetworkInterface *network = NetworkInterface::get_default_instance();
@@ -172,8 +172,8 @@ void connect_to_BBC(/*struct NewsStrings *pNews*/)
     //printf("\nThe HTTP GET response:\n%s\n", response);
    
     char *temp = std::move(response);
-}
-    /*--- Making three strings out of the XML response and storing them in the struct ---
+
+    /*--- Making three strings out of the XML response and storing them in the struct ---*/
     char firstString[200] = { 0 };
     char secondString[200] = { 0 };
     char thirdString[200] = { 0 };
@@ -183,7 +183,7 @@ void connect_to_BBC(/*struct NewsStrings *pNews*/)
     char closingWrap[] = "]]></title>";
 
 
-    temp = strstr(response, startingItem);
+    temp = strstr(temp, startingItem);
     temp = strstr(temp, startingWrap);
     temp = temp + strlen(startingWrap);
 
@@ -228,8 +228,4 @@ void connect_to_BBC(/*struct NewsStrings *pNews*/)
     strcpy(pNews->firstString, firstString);
     strcpy(pNews->secondString, secondString);
     strcpy(pNews->thirdString, thirdString);
-
-    printf("%s\n", firstString);
-    printf("%s\n", secondString);
-    printf("%s\n", thirdString);
-} */
+} 
