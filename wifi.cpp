@@ -114,8 +114,8 @@ void connect_to_BBC(char temp[])
 
     socket->open(network);
 
+    // Using BBCs RSS feed
     const char *host = "feeds.bbci.co.uk";
-    //const char *host = "example.org";
     result = network->gethostbyname(host, &address);
 
     if(result != NSAPI_ERROR_OK)
@@ -138,6 +138,7 @@ void connect_to_BBC(char temp[])
 
     printf("Successfully connected to server %s\n", host);
 
+    // Gets the exact website to extract XML
     const char request[] = "GET /news/world/rss.xml# HTTP/1.1\r\n"
                            "Host: feeds.bbci.co.uk\r\n"
                            "Connection: close\r\n"
