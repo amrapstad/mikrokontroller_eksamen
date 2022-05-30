@@ -11,7 +11,6 @@
 #include "DFRobot_RGBLCD.h"
 #include "nsapi_types.h"
 #include "wifi.h"
-#include "structs.h"
 
 // Blinking rate in milliseconds
 #define BLINKING_RATE     1000ms
@@ -43,9 +42,9 @@ void weatherScreen();
 
 void newsScreen();
 
-
 int main()
 {
+    //struct NewsStrings *pNews = new NewsStrings;
     connect_to_BBC();
 
     lcd.init();

@@ -1,5 +1,4 @@
 #include "wifi.h"
-#include "structs.h"
 
 nsapi_size_or_error_t send_request(Socket *socket, const char *request) {
   if (socket == nullptr || request == nullptr) {
@@ -34,6 +33,10 @@ nsapi_size_or_error_t send_request(Socket *socket, const char *request) {
   
   return bytes_to_send;
 }
+
+
+
+
 
 nsapi_size_or_error_t read_response(Socket *socket, char *buffer,
                                     int buffer_length) {
@@ -74,7 +77,11 @@ nsapi_size_or_error_t read_response(Socket *socket, char *buffer,
   return received_bytes;
 }
 
-void connect_to_BBC(struct NewsStrings *strings)
+
+
+
+
+void connect_to_BBC(/*struct NewsStrings *pNews*/)
 {
     /*---News Feed Get Request---*/
     NetworkInterface *network = NetworkInterface::get_default_instance();
@@ -147,12 +154,14 @@ void connect_to_BBC(struct NewsStrings *strings)
     result = send_request(socket, request);
 
 
-    static constexpr size_t HTTP_RESPONSE_BUF_SIZE = 20000;
+    static constexpr size_t HTTP_RESPONSE_BUF_SIZE = 4000;
     static char response[HTTP_RESPONSE_BUF_SIZE] = { 0 };
     int remaining_bytes = HTTP_RESPONSE_BUF_SIZE;
     int received_bytes = 0;
 
     result = read_response(socket, response, HTTP_RESPONSE_BUF_SIZE);
+    delete socket;
+    socket = nullptr;
 
     if(result < 0)
     {
@@ -160,7 +169,67 @@ void connect_to_BBC(struct NewsStrings *strings)
     }
 
     response[result] = '\0';
-    printf("\nThe HTTP GET response:\n%s\n", response);
+    //printf("\nThe HTTP GET response:\n%s\n", response);
    
-   
+    char *temp = std::move(response);
 }
+    /*--- Making three strings out of the XML response and storing them in the struct ---
+    char firstString[200] = { 0 };
+    char secondString[200] = { 0 };
+    char thirdString[200] = { 0 };
+    char startingItem[] = "<item>";
+    char closingItem[] = "</item>";
+    char startingWrap[] = "<title><![CDATA[";
+    char closingWrap[] = "]]></title>";
+
+
+    temp = strstr(response, startingItem);
+    temp = strstr(temp, startingWrap);
+    temp = temp + strlen(startingWrap);
+
+    int lineLength = 0;
+    while(temp[lineLength] != '\n')
+        lineLength++;
+
+    strncpy(firstString, temp, lineLength);
+
+    firstString[strlen(firstString) - strlen(closingWrap)] = '\0';
+
+
+// Second string
+    temp = strstr(temp, closingItem);
+    temp = strstr(temp, startingItem);
+    temp = strstr(temp, startingWrap);
+    temp = temp + strlen(startingWrap);
+
+    lineLength = 0;
+    while(temp[lineLength] != '\n')
+        lineLength++;
+
+    strncpy(secondString, temp, lineLength);
+    secondString[strlen(secondString) - strlen(closingWrap)] = '\0';
+
+
+// Third string
+    temp = strstr(temp, closingItem);
+    temp = strstr(temp, startingItem);
+    temp = strstr(temp, startingWrap);
+    temp = temp + strlen(startingWrap);
+
+    lineLength = 0;
+    while(temp[lineLength] != '\n')
+        lineLength++;
+
+    strncpy(thirdString, temp, lineLength);
+    thirdString[strlen(thirdString) - strlen(closingWrap)] = '\0';
+
+
+// Printing strings
+    strcpy(pNews->firstString, firstString);
+    strcpy(pNews->secondString, secondString);
+    strcpy(pNews->thirdString, thirdString);
+
+    printf("%s\n", firstString);
+    printf("%s\n", secondString);
+    printf("%s\n", thirdString);
+} */
