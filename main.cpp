@@ -12,7 +12,6 @@
 #include "nsapi_types.h"
 #include "wifi.h"
 
-
 // Blinking rate in milliseconds
 #define BLINKING_RATE     1000ms
 
@@ -46,6 +45,8 @@ void newsScreen();
 
 int main()
 {
+    connect_to_BBC();
+
     lcd.init();
 
     while(true)
