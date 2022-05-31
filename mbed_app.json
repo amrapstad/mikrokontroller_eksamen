@@ -2,6 +2,9 @@
     "target_overrides": {
         "*": {
             "platform.stdio-baud-rate": 115200,
+            "platform.minimal-printf-enable-floating-point": true,
+            "platform.minimal-printf-set-floating-point-max-decimals": 6,
+            "platform.minimal-printf-enable-64-bit": false,
             "nsapi.default-wifi-security": "WPA_WPA2",
             "nsapi.default-wifi-ssid": "\"Heihei\"",
             "nsapi.default-wifi-password": "\"NoHackPlz\"",

@@ -1,0 +1,5 @@
+#ifndef IPGEOLOCATION_CERT
+#define IPGEOLOCATION_CERT
+
+
+#endif
