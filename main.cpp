@@ -14,7 +14,7 @@
 #include <string.h>
 
 // Blinking rate in milliseconds
-#define BLINKING_RATE     1000ms
+#define BLINKING_RATE     350ms
 
 DigitalOut led1(LED1);
 
@@ -28,7 +28,7 @@ DigitalIn button5(PA_4, PullDown);
 
 DFRobot_RGBLCD lcd(16, 2, D14, D15);
 
-char test[] = "Hello";
+char test[] = "Russian oil: EU agrees compromise deal on banning imports";
 int cursorPos = 15;
 int buttonMode = 0;
 bool inAlarmMode = false;
@@ -116,12 +116,14 @@ void weatherScreen()
     lcd.printf("Weather!");
 }
 
-void newsScreen(char string[], size_t stringSize)
+void newsScreen(char newsString[], size_t stringSize)
 {
     // lcd.setCursor(horizontal, vertical)
     // Horizontal: 0-15
     // Vertical: 0-1
-    static int newsStringLength = 0;
+    int totalColumns = 16;
+    static int newsStringBufferStart = 1;
+    static int newsStringBufferEnd = 1;
 
     lcd.clear();
 
@@ -131,18 +133,40 @@ void newsScreen(char string[], size_t stringSize)
     lcd.setCursor(cursorPos, 1);
     if(cursorPos > 0)
     {
-        lcd.printf("%s", string);
-        cursorPos--;
+        // Prints string when the first letter doesn't touch the right side
+        for(int i = 0; i < newsStringBufferEnd; i++)
+        {
+            lcd.printf("%c", newsString[i]);
+            cursorPos++;
+        }
+        newsStringBufferEnd++;
+        cursorPos -= newsStringBufferEnd;
+    }
+    else if(newsStringBufferEnd <= stringSize)
+    {
+        // Prints string when it fills the whole row
+        for(int i = -1; i < totalColumns - 1; i++)
+        {
+            lcd.printf("%c", newsString[newsStringBufferStart + i]);
+            cursorPos++;
+        }
+        newsStringBufferEnd++;
+        newsStringBufferStart++;
+        cursorPos = 0;
+    }
+    else if(newsStringBufferStart > 0)
+    {
+        // Prints string when the last letter doesn't touch the right side
+        for(int i = 0; i < newsStringBufferStart; i++)
+        {
+            lcd.printf("%c", newsString[stringSize - newsStringBufferStart + i]);
+            cursorPos++;
+        }
+        newsStringBufferStart--;
+        cursorPos = 0;
     }
     else
     {
-        for(int i = 0; i < strlen(string) - newsStringLength; i++)
-        {
-            if(newsStringLength + i > strlen(string))
-                return;
-            else
-                lcd.printf("%c", string[i + newsStringLength]);
-        }
-        newsStringLength++;
+        return;
     }
 }
