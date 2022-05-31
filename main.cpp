@@ -41,7 +41,7 @@ void temperatureScreen();
 
 void weatherScreen();
 
-void newsScreen();
+void newsScreen(char string[], size_t stringSize);
 
 int main()
 {
@@ -83,7 +83,7 @@ int main()
                 break;
 
             case 3:
-                newsScreen();
+                newsScreen(test, strlen(test));
                 break;
 
         }
@@ -116,11 +116,12 @@ void weatherScreen()
     lcd.printf("Weather!");
 }
 
-void newsScreen()
+void newsScreen(char string[], size_t stringSize)
 {
     // lcd.setCursor(horizontal, vertical)
     // Horizontal: 0-15
     // Vertical: 0-1
+    static int newsStringLength = 0;
 
     lcd.clear();
 
@@ -130,16 +131,18 @@ void newsScreen()
     lcd.setCursor(cursorPos, 1);
     if(cursorPos > 0)
     {
-        lcd.printf("%s", test);
+        lcd.printf("%s", string);
         cursorPos--;
     }
     else
     {
-        static int abc = 0;
-        for(int i = 0; i < strlen(test) - abc; i++)
+        for(int i = 0; i < strlen(string) - newsStringLength; i++)
         {
-            lcd.printf("%c", test[i + abc]);
+            if(newsStringLength + i > strlen(string))
+                return;
+            else
+                lcd.printf("%c", string[i + newsStringLength]);
         }
-        abc++;
+        newsStringLength++;
     }
 }
