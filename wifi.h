@@ -2,6 +2,7 @@
 #define __WIFI_H__
 
 #include "mbed.h"
+#include "ipify_org_ca_root_certificate.h"
 
 struct NewsStrings
 {
@@ -16,5 +17,7 @@ nsapi_size_or_error_t read_response(Socket *socket, char *buffer,
                                     int buffer_length);
 
 void connect_to_BBC(struct NewsStrings *strings);
+
+void connect_to_IpGeo();
 
 #endif // __WIFI_H__

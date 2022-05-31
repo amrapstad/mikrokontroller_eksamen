@@ -1,4 +1,8 @@
 #include "wifi.h"
+#define BLINKING_RATE 10000ms
+
+
+
 
 nsapi_size_or_error_t send_request(Socket *socket, const char *request) {
   if (socket == nullptr || request == nullptr) {
@@ -33,6 +37,20 @@ nsapi_size_or_error_t send_request(Socket *socket, const char *request) {
   
   return bytes_to_send;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -76,6 +94,80 @@ nsapi_size_or_error_t read_response(Socket *socket, char *buffer,
 
   return received_bytes;
 }
+
+
+const char *get_nsapi_error_string(nsapi_error_t err) {
+  switch (err) {
+  case NSAPI_ERROR_OK:
+    return "NSAPI_ERROR_OK";
+  case NSAPI_ERROR_WOULD_BLOCK:
+    return "NSAPI_ERROR_WOULD_BLOCK";
+  case NSAPI_ERROR_UNSUPPORTED:
+    return "NSAPI_ERROR_UNSUPPORTED";
+  case NSAPI_ERROR_PARAMETER:
+    return "NSAPI_ERROR_PARAMETER";
+  case NSAPI_ERROR_NO_CONNECTION:
+    return "NSAPI_ERROR_NO_CONNECTION";
+  case NSAPI_ERROR_NO_SOCKET:
+    return "NSAPI_ERROR_NO_SOCKET";
+  case NSAPI_ERROR_NO_ADDRESS:
+    return "NSAPI_ERROR_NO_ADDRESS";
+  case NSAPI_ERROR_NO_MEMORY:
+    return "NSAPI_ERROR_NO_MEMORY";
+  case NSAPI_ERROR_NO_SSID:
+    return "NSAPI_ERROR_NO_SSID";
+  case NSAPI_ERROR_DNS_FAILURE:
+    return "NSAPI_ERROR_DNS_FAILURE";
+  case NSAPI_ERROR_DHCP_FAILURE:
+    return "NSAPI_ERROR_DHCP_FAILURE";
+  case NSAPI_ERROR_AUTH_FAILURE:
+    return "NSAPI_ERROR_AUTH_FAILURE";
+  case NSAPI_ERROR_DEVICE_ERROR:
+    return "NSAPI_ERROR_DEVICE_ERROR";
+  case NSAPI_ERROR_IN_PROGRESS:
+    return "NSAPI_ERROR_IN_PROGRESS";
+  case NSAPI_ERROR_ALREADY:
+    return "NSAPI_ERROR_ALREADY";
+  case NSAPI_ERROR_IS_CONNECTED:
+    return "NSAPI_ERROR_IS_CONNECTED";
+  case NSAPI_ERROR_CONNECTION_LOST:
+    return "NSAPI_ERROR_CONNECTION_LOST";
+  case NSAPI_ERROR_CONNECTION_TIMEOUT:
+    return "NSAPI_ERROR_CONNECTION_TIMEOUT";
+  case NSAPI_ERROR_ADDRESS_IN_USE:
+    return "NSAPI_ERROR_ADDRESS_IN_USE";
+  case NSAPI_ERROR_TIMEOUT:
+    return "NSAPI_ERROR_TIMEOUT";
+  case NSAPI_ERROR_BUSY:
+    return "NSAPI_ERROR_BUSY";
+  default:
+    return "NSAPI_ERROR_UNKNOWN";
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -231,3 +323,199 @@ void connect_to_BBC(struct NewsStrings *pNews)
     strcpy(pNews->secondString, secondString);
     strcpy(pNews->thirdString, thirdString);
 } 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void connect_to_IpGeo() {
+    // Initialise the digital pin LED1 as an output
+  DigitalOut led(LED1);
+
+  // Get pointer to default network interface
+  NetworkInterface *network = NetworkInterface::get_default_instance();
+
+  if (!network) {
+    printf("Failed to get default network interface\n");
+    while (1);
+  }
+
+  nsapi_size_or_error_t result;
+
+  do {
+    printf("Connecting to the network...\n");
+    result = network->connect();
+
+    if (result != NSAPI_ERROR_OK) {
+      printf("Failed to connect to network: %d\n", result);
+    }
+  } while (result != NSAPI_ERROR_OK);
+
+  SocketAddress address;
+  result = network->get_ip_address(&address);
+
+  if (result != NSAPI_ERROR_OK) {
+    printf("Failed to get local IP address: %s\n",
+           get_nsapi_error_string(result));
+    while (1);
+  }
+
+  printf("Connected to WLAN and got IP address %s\n", address.get_ip_address());
+
+  while (true) {
+    led = !led;
+    ThisThread::sleep_for(BLINKING_RATE);
+
+    // TLSSocket is used for HTTPS (HTTP secured with TLS/SSL)
+    // This TLS socket is allocated on stack and takes approx 1500 bytes of
+    // stack memory. So make sure you have enough stack size
+    TLSSocket socket;
+    // Alternatively you might allocate from heap:
+    // TLSSocket *socket = new TLSSocket;
+    // but then you MUST remember to free up memory when then local variable
+    // holding the pointer to the allocated socket object goes out of scope:
+    // delete socket;
+    // Otherwise you have created a memory leak
+
+    // Configure timeout on socket receive
+    // (returns NSAPI_ERROR_WOULD_BLOCK on timeout)
+    socket.set_timeout(500);
+
+    result = socket.open(network);
+
+    if (result != NSAPI_ERROR_OK) {
+      printf("Failed to open TLSSocket: %s\n", get_nsapi_error_string(result));
+      continue;
+    }
+
+    const char host[] = "ipify.org"; // Host api.ipify.org will not work
+    // Get IP address of host (web server) by name
+    result = network->gethostbyname(host, &address);
+
+    if (result != NSAPI_ERROR_OK) {
+      printf("Failed to get IP address of host %s: %s\n", host,
+             get_nsapi_error_string(result));
+      continue;
+    }
+
+    printf("IP address of server %s is %s\n", host, address.get_ip_address());
+
+    // Set server TCP port number, 443 for HTTPS
+    address.set_port(443);
+
+    // Set the root certificate of the web site.
+    // See include/ipify_org_ca_root_certificate.h for how to download the cert.
+    result = socket.set_root_ca_cert(ipify_org_ca_root_certificate);
+
+    if (result != NSAPI_ERROR_OK) {
+      printf("Failed to set root certificate of the web site: %s\n",
+             get_nsapi_error_string(result));
+      continue;
+    }
+
+    // Connect to server at the given address
+    result = socket.connect(address);
+
+    // Check result
+    if (result != NSAPI_ERROR_OK) {
+      printf("Failed to connect to server at %s: %s\n", host,
+             get_nsapi_error_string(result));
+      continue;
+    }
+
+    printf("Successfully connected to server %s\n", host);
+
+    // Create HTTP request
+    const char request[] = "GET /?format=json HTTP/1.1\r\n"
+                           "Host: api.ipify.org\r\n"
+                           "Connection: close\r\n"
+                           "\r\n";
+
+    // Send request
+    result = send_request(&socket, request);
+
+    // Check result
+    if (result < 0) {
+      printf("Failed to send request: %d\n", result);
+      continue;
+    }
+
+    // We need to read the response into memory. The destination is called a
+    // buffer. If you make this buffer static it will be placed in BSS and won't
+    // use stack memory.
+    static char buffer[2000];
+
+    // Read response
+    result = read_response(&socket, buffer, sizeof(buffer));
+
+    // Check result
+    if (result < 0) {
+      printf("Failed to read response: %d\n", result);
+      continue;
+    }
+
+    // Find the start and end of the JSON data.
+    // If the JSON response is an array you need to replace this with [ and ]
+    char *json_begin = strchr(buffer, '{');
+    char *json_end = strrchr(buffer, '}');
+
+    // Check if we actually got JSON in the response
+    if (json_begin == nullptr || json_end == nullptr) {
+      printf("Failed to find JSON in response\n");
+      continue;
+    }
+
+    /*
+
+    // End the string after the end of the JSON data in case the response
+    // contains trailing data
+    json_end[1] = 0;
+
+    printf("JSON response:\n");
+    printf("%s\n", json_begin);
+
+    // Parse response as JSON, starting from the first {
+    json document = json::parse(json_begin);
+
+    if (document.is_discarded()) {
+      printf("The input is invalid JSON\n");
+      continue;
+    }
+
+    // Get IP address from JSON object
+    std::string ip;
+    document["ip"].get_to(ip);
+
+    printf("IP from JSON data: %s\n", ip.c_str());
+    */
+  }
+}
