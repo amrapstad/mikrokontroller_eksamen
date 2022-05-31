@@ -122,8 +122,8 @@ void newsScreen(char newsString[], size_t stringSize)
     // Horizontal: 0-15
     // Vertical: 0-1
     int totalColumns = 16;
-    static int newsStringBufferStart = 1;
-    static int newsStringBufferEnd = 1;
+    static int newsStringBufferStart = 0;
+    static int newsStringBufferEnd = 0;
 
     lcd.clear();
 
@@ -131,42 +131,41 @@ void newsScreen(char newsString[], size_t stringSize)
     lcd.printf("BBC News:");
 
     lcd.setCursor(cursorPos, 1);
+
+    // Prints string when the first letter doesn't touch the left side
     if(cursorPos > 0)
     {
-        // Prints string when the first letter doesn't touch the right side
-        for(int i = 0; i < newsStringBufferEnd; i++)
+        for(int i = 0; i < newsStringBufferEnd + 1; i++)
         {
             lcd.printf("%c", newsString[i]);
             cursorPos++;
         }
         newsStringBufferEnd++;
-        cursorPos -= newsStringBufferEnd;
+        cursorPos -= newsStringBufferEnd + 1;
     }
-    else if(newsStringBufferEnd <= stringSize)
+    else if(newsStringBufferStart < stringSize)
     {
-        // Prints string when it fills the whole row
-        for(int i = -1; i < totalColumns - 1; i++)
+        // Prints string when it fill the whole display 
+        if(newsStringBufferEnd < stringSize)
         {
-            lcd.printf("%c", newsString[newsStringBufferStart + i]);
-            cursorPos++;
+            for(int i = 0; i < totalColumns; i++)
+            {
+                lcd.printf("%c", newsString[newsStringBufferStart + i]);
+                cursorPos++;
+            }
         }
-        newsStringBufferEnd++;
-        newsStringBufferStart++;
-        cursorPos = 0;
-    }
-    else if(newsStringBufferStart > 0)
-    {
         // Prints string when the last letter doesn't touch the right side
-        for(int i = 0; i < newsStringBufferStart; i++)
+        else
         {
-            lcd.printf("%c", newsString[stringSize - newsStringBufferStart + i]);
-            cursorPos++;
+            for(int i = 0; i < stringSize - newsStringBufferStart; i++)
+            {
+                lcd.printf("%c", newsString[ newsStringBufferStart + i]);
+            }
         }
-        newsStringBufferStart--;
+        newsStringBufferStart++;
+        newsStringBufferEnd++;
         cursorPos = 0;
     }
     else
-    {
         return;
-    }
 }
