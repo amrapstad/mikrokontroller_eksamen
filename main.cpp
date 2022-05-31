@@ -1,12 +1,12 @@
-#include "BufferedSerial.h"
-#include "NetworkInterface.h"
-#include "SocketAddress.h"
-#include "TCPSocket.h"
 #include "mbed.h"
 #include "DFRobot_RGBLCD.h"
 #include "nsapi_types.h"
 #include "wifi.h"
 #include <string.h>
+#include "BufferedSerial.h"
+#include "NetworkInterface.h"
+#include "SocketAddress.h"
+#include "TCPSocket.h"
 
 // Blinking rate in milliseconds
 #define BLINKING_RATE     350ms
