@@ -43,9 +43,6 @@ int main()
 {
     struct NewsStrings *pNews = new NewsStrings;
     connect_to_BBC(pNews);
-    printf("%s\n", pNews->firstString);
-    printf("%s\n", pNews->secondString);
-    printf("%s\n", pNews->thirdString);
 
     lcd.init();
 
@@ -79,7 +76,7 @@ int main()
                 break;
 
             case 3:
-                newsScreen(pNews->completeString, strlen(pNews->completeString));
+                newsScreen(pNews->headlineString, strlen(pNews->headlineString));
                 break;
 
         }

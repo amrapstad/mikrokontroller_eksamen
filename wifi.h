@@ -5,11 +5,7 @@
 
 struct NewsStrings
 {
-    char firstString[200];
-    char secondString[200];
-    char thirdString[200];
-
-    char completeString[600];
+    char headlineString[500];
 };
 
 nsapi_size_or_error_t send_request(Socket *socket, const char *request);

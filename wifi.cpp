@@ -226,16 +226,12 @@ void connect_to_BBC(struct NewsStrings *pNews)
     thirdString[strlen(thirdString) - strlen(closingWrap)] = '\0';
 
 
-// Printing strings
-    strcpy(pNews->firstString, firstString);
-    strcpy(pNews->secondString, secondString);
-    strcpy(pNews->thirdString, thirdString);
-
-    strcat(pNews->completeString, firstString);
+// Composing three strings into one
+    strcat(pNews->headlineString, firstString);
     for (int i = 0; i < 16; i++)
-        strcat(pNews->completeString, " ");
-    strcat(pNews->completeString, secondString);
+        strcat(pNews->headlineString, " ");
+    strcat(pNews->headlineString, secondString);
     for (int i = 0; i < 16; i++)
-        strcat(pNews->completeString, " ");
-    strcat(pNews->completeString, thirdString);
+        strcat(pNews->headlineString, " ");
+    strcat(pNews->headlineString, thirdString);
 } 
