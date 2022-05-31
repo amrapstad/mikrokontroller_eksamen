@@ -230,4 +230,12 @@ void connect_to_BBC(struct NewsStrings *pNews)
     strcpy(pNews->firstString, firstString);
     strcpy(pNews->secondString, secondString);
     strcpy(pNews->thirdString, thirdString);
+
+    strcat(pNews->completeString, firstString);
+    for (int i = 0; i < 16; i++)
+        strcat(pNews->completeString, " ");
+    strcat(pNews->completeString, secondString);
+    for (int i = 0; i < 16; i++)
+        strcat(pNews->completeString, " ");
+    strcat(pNews->completeString, thirdString);
 } 

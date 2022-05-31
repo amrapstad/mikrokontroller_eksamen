@@ -27,27 +27,17 @@ DigitalIn button4(PA_3, PullDown);
 DigitalIn button5(PA_4, PullDown);
 
 DFRobot_RGBLCD lcd(16, 2, D14, D15);
-/*
-char test1[] = "Russian oil: EU agrees compromise deal on banning imports";
-char test2[] = "'I watched from afar Russia’s latest merciless assault on Severodonetsk'";
-char test3[] = "Nepal plane crash: Officials recover black box from wreckage"; */
-
-const char test1[] = "Dette er kult!";
-const char test2[] = "Kruber's kul";
-const char test3[] = "Noe";
 
 int buttonMode = 0;
 bool inAlarmMode = false;
 
 void defaultScreen();
-
 void alarmScreen();
-
 void temperatureScreen();
-
 void weatherScreen();
+void newsScreen(const char string[], size_t stringSize);
 
-void newsScreen(const char string[], size_t stringSize, int &headlineNumber);
+
 
 int main()
 {
@@ -89,24 +79,7 @@ int main()
                 break;
 
             case 3:
-                static int headLineNumber = 0;
-                switch(headLineNumber)
-                {
-                    case 0:
-                        newsScreen(test1, strlen(test1), headLineNumber);
-                        break;
-
-                    case 1:
-                        newsScreen(test2, strlen(test2), headLineNumber);
-                        break;
-
-                    case 2:
-                        newsScreen(test3, strlen(test3), headLineNumber);
-                        break;
-
-                    case 4:
-                        headLineNumber = 0;
-                }
+                newsScreen(pNews->completeString, strlen(pNews->completeString));
                 break;
 
         }
@@ -115,11 +88,14 @@ int main()
 }
 
 
+
 void defaultScreen()
 {
     lcd.clear();
     lcd.printf("Default!");
 }
+
+
 
 void alarmScreen()
 {
@@ -127,11 +103,15 @@ void alarmScreen()
     lcd.printf("Alarm!");
 }
 
+
+
 void temperatureScreen()
 {
     lcd.clear();
     lcd.printf("Temperature!");
 }
+
+
 
 void weatherScreen()
 {
@@ -139,7 +119,9 @@ void weatherScreen()
     lcd.printf("Weather!");
 }
 
-void newsScreen(const char inputString[], size_t stringSize, int &headlineNumber)
+
+
+void newsScreen(const char inputString[], size_t stringSize)
 {
     // lcd.setCursor(horizontal, vertical)
     // Horizontal: 0-15
@@ -192,8 +174,7 @@ void newsScreen(const char inputString[], size_t stringSize, int &headlineNumber
     }
     else
     {
-        // Resets scrolling so the next headline can scroll normally
-        headlineNumber++;
+        // Resets scrolling
         cursorPos = 15;
         newsStringBufferStart = 0;
         newsStringBufferEnd = 0;
