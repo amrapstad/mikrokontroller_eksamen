@@ -1,8 +1,12 @@
 {
     "target_overrides": {
         "*": {
+            "target.printf_lib": "std",   
             "platform.stdio-buffered-serial": 1,
             "platform.stdio-baud-rate": 115200,
+            "platform.minimal-printf-enable-floating-point": true,
+            "platform.minimal-printf-set-floating-point-max-decimals": 6,
+            "platform.minimal-printf-enable-64-bit": false,
             "nsapi.default-wifi-security": "WPA_WPA2",
             "nsapi.default-wifi-ssid": "\"GHiPhone\"",
             "nsapi.default-wifi-password": "\"heipaadeg\"",
@@ -11,6 +15,7 @@
         "DISCO_L475VG_IOT01A": {
             "target.components_add": ["ism43362"],
             "ism43362.provide-default": true,
+            "ism43362.wifi-debug": false,
             "target.network-default-interface-type": "WIFI"
         }
     }

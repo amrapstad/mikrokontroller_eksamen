@@ -1,17 +1,25 @@
 #include "mbed.h"
 #include "DFRobot_RGBLCD.h"
-
+#include "nsapi_types.h"
+#include "wifi.h"
+#include <string.h>
+#include "BufferedSerial.h"
+#include "NetworkInterface.h"
+#include "SocketAddress.h"
+#include "TCPSocket.h"
 
 // Blinking rate in milliseconds
-#define BLINKING_RATE     1000ms
+#define BLINKING_RATE     350ms
 
 DigitalOut led1(LED1);
 
-InterruptIn button1(PA_1, PullDown);
-InterruptIn button2(PA_0, PullDown);
-InterruptIn button3(PD_14, PullDown);
-InterruptIn button4(PA_3, PullDown);
-InterruptIn button5(PA_4, PullDown);
+BufferedSerial pc(USBTX, USBRX, 115200);
+
+DigitalIn button1(PA_1, PullDown);
+DigitalIn button2(PA_0, PullDown);
+DigitalIn button3(PD_14, PullDown);
+DigitalIn button4(PA_3, PullDown);
+DigitalIn button5(PA_4, PullDown);
 
 DFRobot_RGBLCD lcd(16, 2, D14, D15);
 
@@ -19,17 +27,18 @@ int buttonMode = 0;
 bool inAlarmMode = false;
 
 void defaultScreen();
-
 void alarmScreen();
-
 void temperatureScreen();
-
 void weatherScreen();
+void newsScreen(const char string[], size_t stringSize);
 
-void newsScreen();
+
 
 int main()
 {
+    struct NewsStrings *pNews = new NewsStrings;
+    connect_to_BBC(pNews);
+
     lcd.init();
 
     while(true)
@@ -62,14 +71,14 @@ int main()
                 break;
 
             case 3:
-                newsScreen();
+                newsScreen(pNews->headlineString, strlen(pNews->headlineString));
                 break;
 
         }
-
         ThisThread::sleep_for(BLINKING_RATE);
     }
 }
+
 
 
 void defaultScreen()
@@ -78,11 +87,15 @@ void defaultScreen()
     lcd.printf("Default!");
 }
 
+
+
 void alarmScreen()
 {
     lcd.clear();
     lcd.printf("Alarm!");
 }
+
+
 
 void temperatureScreen()
 {
@@ -90,14 +103,73 @@ void temperatureScreen()
     lcd.printf("Temperature!");
 }
 
+
+
 void weatherScreen()
 {
     lcd.clear();
     lcd.printf("Weather!");
 }
 
-void newsScreen()
+
+
+void newsScreen(const char inputString[], size_t stringSize)
 {
+    // lcd.setCursor(horizontal, vertical)
+    // Horizontal: 0-15
+    // Vertical: 0-1
+    int totalColumns = 16;
+    static int cursorPos = 15;
+    static int newsStringBufferStart = 0;
+    static int newsStringBufferEnd = 0;
+
     lcd.clear();
-    lcd.printf("News!");
+
+    lcd.setCursor(0, 0);
+    lcd.printf("BBC News:");
+
+    lcd.setCursor(cursorPos, 1);
+
+    // Prints string when the first letter doesn't touch the left side
+    if(cursorPos > 0)
+    {
+        for(int i = 0; i < newsStringBufferEnd + 1; i++)
+        {
+            lcd.printf("%c", inputString[i]);
+            cursorPos++;
+        }
+        newsStringBufferEnd++;
+        cursorPos -= newsStringBufferEnd + 1;
+    }
+    else if(newsStringBufferStart < stringSize)
+    {
+        // Prints string when it fill the whole display 
+        if(newsStringBufferEnd < stringSize)
+        {
+            for(int i = 0; i < totalColumns; i++)
+            {
+                lcd.printf("%c", inputString[newsStringBufferStart + i]);
+                cursorPos++;
+            }
+        }
+        // Prints string when the last letter doesn't touch the right side
+        else
+        {
+            for(int i = 0; i < stringSize - newsStringBufferStart; i++)
+            {
+                lcd.printf("%c", inputString[ newsStringBufferStart + i]);
+            }
+        }
+        newsStringBufferStart++;
+        newsStringBufferEnd++;
+        cursorPos = 0;
+    }
+    else
+    {
+        // Resets scrolling
+        cursorPos = 15;
+        newsStringBufferStart = 0;
+        newsStringBufferEnd = 0;
+        return;
+    }
 }
