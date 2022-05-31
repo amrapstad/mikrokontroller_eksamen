@@ -11,6 +11,7 @@
 #include "DFRobot_RGBLCD.h"
 #include "nsapi_types.h"
 #include "wifi.h"
+#include <string.h>
 
 // Blinking rate in milliseconds
 #define BLINKING_RATE     1000ms
@@ -27,10 +28,10 @@ DigitalIn button5(PA_4, PullDown);
 
 DFRobot_RGBLCD lcd(16, 2, D14, D15);
 
-int buttonMode = 0;
-bool inAlarmMode = false;
 char test[] = "Hello";
 int cursorPos = 15;
+int buttonMode = 0;
+bool inAlarmMode = false;
 
 void defaultScreen();
 
@@ -86,7 +87,6 @@ int main()
                 break;
 
         }
-
         ThisThread::sleep_for(BLINKING_RATE);
     }
 }
@@ -118,18 +118,28 @@ void weatherScreen()
 
 void newsScreen()
 {
-    // lcd.setCursor(horizontal, verical)
+    // lcd.setCursor(horizontal, vertical)
     // Horizontal: 0-15
     // Vertical: 0-1
 
     lcd.clear();
+
     lcd.setCursor(0, 0);
     lcd.printf("BBC News:");
-    
-    lcd.setCursor(cursorPos, 1);
-    lcd.printf("%s", test);
 
-    cursorPos--;
-    if(cursorPos < 0)
-        cursorPos = 15;
+    lcd.setCursor(cursorPos, 1);
+    if(cursorPos > 0)
+    {
+        lcd.printf("%s", test);
+        cursorPos--;
+    }
+    else
+    {
+        static int abc = 0;
+        for(int i = 0; i < strlen(test) - abc; i++)
+        {
+            lcd.printf("%c", test[i + abc]);
+        }
+        abc++;
+    }
 }

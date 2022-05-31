@@ -155,7 +155,7 @@ void connect_to_BBC(struct NewsStrings *pNews)
 
 
     static constexpr size_t HTTP_RESPONSE_BUF_SIZE = 4000;
-    static char response[HTTP_RESPONSE_BUF_SIZE] = { 0 };
+    char response[HTTP_RESPONSE_BUF_SIZE] = { 0 };
     int remaining_bytes = HTTP_RESPONSE_BUF_SIZE;
     int received_bytes = 0;
 
