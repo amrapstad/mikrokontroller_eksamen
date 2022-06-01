@@ -2,3 +2,5 @@ wifi.h/wifi.cpp has functions that are modified versions of Ken Henry/Crhistian 
 https://tools.uia.no/bitbucket/projects/IKT104G22V/repos/teacher-course/browse
 
 json.hpp is a file we downloaded from a link in IKT104s lectures
+
+For wifi connection we are using student-FoU
