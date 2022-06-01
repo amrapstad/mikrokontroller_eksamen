@@ -146,6 +146,7 @@ void defaultScreen(char *time_buffer, struct tm *time_struct)
 {
     strftime(time_buffer, BUF_LENGTH, "%a %d %b %H:%M", time_struct);
 
+    lcd.clear();
     lcd.setCursor(0, 0);
     lcd.printf("%s", time_buffer);
     lcd.setCursor(0, 1);
@@ -194,7 +195,7 @@ void temperatureScreen()
             lcd.setCursor(1,0);
             lcd.printf("Fuktighet:");
             lcd.setCursor(0,1);
-            lcd.printf(" %.1f %%", humidity);
+            lcd.printf(" %.1f%%", humidity);
         }
 
         //Temperature RGB
