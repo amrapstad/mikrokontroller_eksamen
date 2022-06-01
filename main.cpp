@@ -93,6 +93,7 @@ int main()
         lcd.printf("%d", rtc_timer - 7200);
         ThisThread::sleep_for(REFRESH_RATE);
     }
+    lcd.clear();
 
     while(true)
     {
