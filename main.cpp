@@ -9,8 +9,9 @@
 #include "TCPSocket.h"
 #include "HTS221Sensor.h"
 
-// Blinking rate in milliseconds
+// Define numbers
 #define BLINKING_RATE       350ms
+#define BUF_LENGTH          256
 
 
 ////DEVICES////
@@ -62,9 +63,9 @@ int main()
     // WILL BE DONE IN A THREAD LATER
     connect_to_WorldTime(network, unix_time);
 
-    set_time(unix_time);
-    time_t currentTime = time(NULL);
-    printf("\n%u\n", currentTime);
+    // Since the epoch time is UTC/GMT, we need to adjust so it mathces our timezone
+    // We do this by adding 2 hours or 7200 seconds (60 * 60 * 2 = 7200) to the epcoh time
+    set_time(unix_time + 7200);
     
     // Connect to BBCs RSS feed to get news headlines
     // WILL BE DONE IN A THREAD LATER
