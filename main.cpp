@@ -44,6 +44,7 @@ int main()
 
     struct NewsStrings *pNews = new NewsStrings;
 
+    // Shows the epoch time for 5 seconds
     lcd.init();
     lcd.setCursor(0, 0);
     lcd.printf("UNIX epoch time:");
