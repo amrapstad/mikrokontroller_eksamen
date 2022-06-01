@@ -37,12 +37,14 @@ void newsScreen(const char string[], size_t stringSize);
 
 int main()
 {
+    struct NewsStrings *pNews = new NewsStrings;
+
+    // Get the default network instance for all the connections that are required
     NetworkInterface *network = NetworkInterface::get_default_instance();
 
-    //connect_to_IpGeo();
+    // Connect to WorldTime to get UNIX epoch time;
+    // WILL BE DONE IN A THREAD LATER
     connect_to_WorldTime(network, unix_time);
-
-    struct NewsStrings *pNews = new NewsStrings;
 
     // Shows the epoch time for 5 seconds
     lcd.init();
