@@ -1,6 +1,17 @@
 #include "wifi.h"
 
-nsapi_size_or_error_t send_request(Socket *socket, const char *request) {
+using json = nlohmann::json;
+
+
+
+
+
+
+
+
+
+nsapi_size_or_error_t send_request(Socket *socket, const char *request)
+{
   if (socket == nullptr || request == nullptr) {
     printf("Invalid function parameters\n");
     return NSAPI_ERROR_PARAMETER;
@@ -33,6 +44,11 @@ nsapi_size_or_error_t send_request(Socket *socket, const char *request) {
   
   return bytes_to_send;
 }
+
+
+
+
+
 
 
 
@@ -81,22 +97,97 @@ nsapi_size_or_error_t read_response(Socket *socket, char *buffer,
 
 
 
-void connect_to_BBC(struct NewsStrings *pNews)
+
+
+
+
+const char *get_nsapi_error_string(nsapi_error_t err) {
+  switch (err) {
+  case NSAPI_ERROR_OK:
+    return "NSAPI_ERROR_OK";
+  case NSAPI_ERROR_WOULD_BLOCK:
+    return "NSAPI_ERROR_WOULD_BLOCK";
+  case NSAPI_ERROR_UNSUPPORTED:
+    return "NSAPI_ERROR_UNSUPPORTED";
+  case NSAPI_ERROR_PARAMETER:
+    return "NSAPI_ERROR_PARAMETER";
+  case NSAPI_ERROR_NO_CONNECTION:
+    return "NSAPI_ERROR_NO_CONNECTION";
+  case NSAPI_ERROR_NO_SOCKET:
+    return "NSAPI_ERROR_NO_SOCKET";
+  case NSAPI_ERROR_NO_ADDRESS:
+    return "NSAPI_ERROR_NO_ADDRESS";
+  case NSAPI_ERROR_NO_MEMORY:
+    return "NSAPI_ERROR_NO_MEMORY";
+  case NSAPI_ERROR_NO_SSID:
+    return "NSAPI_ERROR_NO_SSID";
+  case NSAPI_ERROR_DNS_FAILURE:
+    return "NSAPI_ERROR_DNS_FAILURE";
+  case NSAPI_ERROR_DHCP_FAILURE:
+    return "NSAPI_ERROR_DHCP_FAILURE";
+  case NSAPI_ERROR_AUTH_FAILURE:
+    return "NSAPI_ERROR_AUTH_FAILURE";
+  case NSAPI_ERROR_DEVICE_ERROR:
+    return "NSAPI_ERROR_DEVICE_ERROR";
+  case NSAPI_ERROR_IN_PROGRESS:
+    return "NSAPI_ERROR_IN_PROGRESS";
+  case NSAPI_ERROR_ALREADY:
+    return "NSAPI_ERROR_ALREADY";
+  case NSAPI_ERROR_IS_CONNECTED:
+    return "NSAPI_ERROR_IS_CONNECTED";
+  case NSAPI_ERROR_CONNECTION_LOST:
+    return "NSAPI_ERROR_CONNECTION_LOST";
+  case NSAPI_ERROR_CONNECTION_TIMEOUT:
+    return "NSAPI_ERROR_CONNECTION_TIMEOUT";
+  case NSAPI_ERROR_ADDRESS_IN_USE:
+    return "NSAPI_ERROR_ADDRESS_IN_USE";
+  case NSAPI_ERROR_TIMEOUT:
+    return "NSAPI_ERROR_TIMEOUT";
+  case NSAPI_ERROR_BUSY:
+    return "NSAPI_ERROR_BUSY";
+  default:
+    return "NSAPI_ERROR_UNKNOWN";
+  }
+}
+
+
+
+
+
+
+
+
+
+void parse_json_data(char *input, int &unix_time)
+{
+    json j_object = json::parse(input, nullptr, false);
+
+    if (j_object.is_discarded())
+    {
+        printf("The input is invalid JSON\n");
+        return;
+    }
+    printf("The input is valid JSON\n");
+
+    unix_time = j_object["unixtime"].get<int>();
+}
+
+
+
+
+
+
+
+
+
+void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
 {
     /*---News Feed Get Request---*/
-    NetworkInterface *network = NetworkInterface::get_default_instance();
-
-    if(!network)
-    {
-        printf("Failed to get the default network instance\n");
-        while(true);
-    }
-
     nsapi_size_or_error_t result;
 
     do
     {
-        printf("Connecting to network...\n");
+        printf("\nConnecting to network for BBC...\n");
         result = network->connect();
 
         if(result != 0)
@@ -128,7 +219,7 @@ void connect_to_BBC(struct NewsStrings *pNews)
     if(result != NSAPI_ERROR_OK)
     {
         printf("Failed to get IP address of host %s: %d\n", host, result);
-        while(1);
+        while(true);
     }
 
     printf("IP address of server %s is %s\n", host, address.get_ip_address());
@@ -140,7 +231,7 @@ void connect_to_BBC(struct NewsStrings *pNews)
     if(result != NSAPI_ERROR_OK)
     {
         printf("Failed to connect to server at %s: %d\n", host, result);
-        while(1);
+        while(true);
     }
 
     printf("Successfully connected to server %s\n", host);
@@ -160,9 +251,12 @@ void connect_to_BBC(struct NewsStrings *pNews)
     int received_bytes = 0;
 
     result = read_response(socket, response, HTTP_RESPONSE_BUF_SIZE);
+    socket->close();
 
     delete socket;
     socket = nullptr;
+
+    network->disconnect();
 
 
     if(result < 0)
@@ -171,11 +265,10 @@ void connect_to_BBC(struct NewsStrings *pNews)
     }
 
     response[result] = '\0';
-    //printf("\nThe HTTP GET response:\n%s\n", response);
    
     char *temp = std::move(response);
 
-    /*--- Making three strings out of the XML response and storing them in the struct ---*/
+/*--- Making three strings out of the XML response and storing them in the struct ---*/
     char firstString[200] = { 0 };
     char secondString[200] = { 0 };
     char thirdString[200] = { 0 };
@@ -235,3 +328,100 @@ void connect_to_BBC(struct NewsStrings *pNews)
         strcat(pNews->headlineString, " ");
     strcat(pNews->headlineString, thirdString);
 } 
+
+
+
+
+
+
+
+
+
+void connect_to_WorldTime(NetworkInterface *network, int &unix_time)
+{
+    nsapi_size_or_error_t result;
+    do
+    {
+        printf("\nConnecting to network for World Time...\n");
+        result = network->connect();
+
+        if(result != 0)
+        {
+            printf("Failed to connect to network: %d\n", result);
+        }
+    } while(result != 0);
+
+    printf("Connected to network successfully\n");
+
+
+    SocketAddress address;
+    network->get_ip_address(&address);
+
+    TCPSocket *socket = new TCPSocket;
+
+    if(socket == nullptr)
+    {
+        printf("Failed to allocate socket instance\n");
+        while(true);
+    }
+
+    socket->open(network);
+
+    // Connecting to worldtimeapi with public ip address to get unix time   
+    const char *host = "worldtimeapi.org";
+    result = network->gethostbyname(host, &address);
+
+    if(result != NSAPI_ERROR_OK)
+    {
+        printf("Failed to get IP address of host %s: %d\n", host, result);
+        while(true);
+    }
+
+    printf("IP address of server %s is %s\n", host, address.get_ip_address());
+
+    address.set_port(80);
+
+    result = socket->connect(address);
+
+    if(result != NSAPI_ERROR_OK)
+    {
+        printf("Failed to connect to server at %s: %d\n", host, result);
+        while(true);
+    }
+
+    printf("Successfully connected to server %s\n", host);
+
+    // Get the timezone for oslo (Grimstads timezone as well)
+    const char request[] = "GET /api/ip HTTP/1.1\r\n"
+                           "Host: worldtimeapi.org\r\n"
+                           "Connection: close\r\n"
+                           "\r\n";
+
+    result = send_request(socket, request);
+    if(result != 0)
+    {
+        printf("Failed to send request: %d\n", result);
+        socket->close();
+    }
+
+    // Receive data
+    static constexpr size_t HTTP_RESPONSE_BUF_SIZE = 4000;
+    static char http_response[HTTP_RESPONSE_BUF_SIZE] = { 0 };
+    int remaining_bytes = HTTP_RESPONSE_BUF_SIZE;
+    int received_bytes = 0;
+
+    result = read_response(socket, http_response, HTTP_RESPONSE_BUF_SIZE);
+
+    // Make a string out of only the json part of the response
+    char *json_start = strchr(http_response, '{');
+
+    parse_json_data(json_start, unix_time);
+
+    printf("Unix time: %d\n", unix_time);
+
+    socket->close();
+    delete socket;
+    socket = nullptr;
+
+    network->disconnect();
+}

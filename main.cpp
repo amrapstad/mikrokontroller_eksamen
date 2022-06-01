@@ -10,53 +10,70 @@
 #include "HTS221Sensor.h"
 
 // Blinking rate in milliseconds
-#define BLINKING_RATE     350ms
-#define WAIT_TIME_MS 1000
+#define BLINKING_RATE       350ms
 
+
+////DEVICES////
 DigitalOut led1(LED1);
 
 BufferedSerial pc(USBTX, USBRX, 115200);
 
 DigitalIn button1(PA_1, PullDown);
-DigitalIn button2(PA_0, PullDown);
+InterruptIn button2(PA_0);
 DigitalIn button3(PD_14, PullDown);
 DigitalIn button4(PA_3, PullDown);
 DigitalIn button5(PA_4, PullDown);
 
 DFRobot_RGBLCD lcd(16, 2, D14, D15);
 
+DevI2C i2c_device(PB_11, PB_10);
+HTS221Sensor sensor(&i2c_device);
+
+
+////GLOBAL BARIABLES////
+int unix_time = 0;
 int buttonMode = 0;
 bool inAlarmMode = false;
+float humidity;
+float temperature;
+bool temp_state = true;
 
+
+////STANDARD FUNCTIONS////
 void defaultScreen();
 void alarmScreen();
 void temperatureScreen();
 void weatherScreen();
 void newsScreen(const char string[], size_t stringSize);
 
-bool temp_state = true;
-
-////FOR TEMP&HUMID///////
-InterruptIn button(PA_0, PullDown);
-DevI2C I2c(PB_11, PB_10);
-HTS221Sensor Sensor(&I2c);
-bool temperatureState;
-void smart() {
-    temp_state = !temp_state;
-}    
-bool pressed_ones = false;
-int option;
-float fuktighet;
-float temperatur;
-
-
 
 int main()
 {
     struct NewsStrings *pNews = new NewsStrings;
-    connect_to_BBC(pNews);
 
+    NetworkInterface *network = NetworkInterface::get_default_instance();
+    if(!network)
+    {
+        printf("Failed to get the default network instance\n");
+        while(true);
+    }
+
+    // Connect to WorldTime to get UNIX epoch time;
+    // WILL BE DONE IN A THREAD LATER
+    connect_to_WorldTime(network, unix_time);
+    
+    // Connect to BBCs RSS feed to get news headlines
+    // WILL BE DONE IN A THREAD LATER
+    network = NetworkInterface::get_default_instance();
+    connect_to_BBC(network, pNews);
+
+    // Shows the epoch time for 5 seconds
     lcd.init();
+    lcd.setCursor(0, 0);
+    lcd.printf("UNIX epoch time:");
+    lcd.setCursor(0, 1);
+    lcd.printf("%d", unix_time);
+    ThisThread::sleep_for(5000ms);
 
     while(true)
     {
@@ -102,7 +119,7 @@ int main()
 void defaultScreen()
 {
     lcd.clear();
-    lcd.printf("DEFAULT!");
+    lcd.printf("Default!");
 }
 
 
@@ -113,58 +130,59 @@ void alarmScreen()
     lcd.printf("Alarm!");
 }
 
-
-
+void change_temp_state()
+{
+    temp_state = !temp_state;
+}
 void temperatureScreen()
 {
     lcd.clear();
 
-    if (Sensor.init(NULL) != 0) {
+    if (sensor.init(NULL) != 0) {
         printf("Initialization of device failed\n");
     }
 
-    if (Sensor.enable() !=0) {
+    if (sensor.enable() !=0) {
         printf("Failed to enable device\n");
     }
 
-        Sensor.get_temperature(&temperatur);
-        Sensor.get_humidity(&fuktighet);
+        sensor.get_temperature(&temperature);
+        sensor.get_humidity(&humidity);
 
         
-        button.fall(&smart);
+        button2.fall(&change_temp_state);
         if (temp_state == true) {
             lcd.clear();
             lcd.setCursor(1,0);
-            lcd.printf("Temperatur:");
+            lcd.printf("Temperature:");
             lcd.setCursor(0,1);
-            lcd.printf(" %.1f", temperatur);
+            lcd.printf(" %.1f C", temperature);
         }
         if (temp_state == false) {
             lcd.clear();
             lcd.setCursor(1,0);
             lcd.printf("Fuktighet:");
             lcd.setCursor(0,1);
-            lcd.printf(" %.1f", fuktighet);
+            lcd.printf(" %.1f %%", humidity);
         }
 
         //Temperatur RGB
-        if ( temperatur < 20 && temp_state == true) {
+        if (temperature < 20 && temp_state == true) {
             lcd.setColor(BLUE);
         }
-        if  (temperatur >= 20 && temperatur <= 24 && temp_state == true) {
+        if  (temperature >= 20 && temperature <= 24 && temp_state == true) {
             lcd.setRGB(255, 165, 0);
         } 
-        if  (temperatur > 24 && temp_state == true) {
+        if  (temperature > 24 && temp_state == true) {
             lcd.setColor(RED);
         } 
 
         //Fuktighet RGB
-        if  (fuktighet > 0 && temp_state == false) {
-                float fuktighet_meter=2.55*fuktighet;
-                lcd.setRGB(255-fuktighet_meter,255-fuktighet_meter,255);
-            }
-
-        printf("Fuktighet: %.1f  Temperatur: %.1f\n", fuktighet, temperatur);
+        if  (humidity > 0 && temp_state == false)
+        {
+            float humidity_meter=2.55*humidity;
+            lcd.setRGB(255-humidity_meter, 255-humidity_meter, 255);
+        }
 }
 
 
