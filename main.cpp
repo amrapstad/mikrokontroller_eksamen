@@ -34,6 +34,8 @@ HTS221Sensor sensor(&i2c_device);
 ////GLOBAL BARIABLES////
 int unix_time = 0;
 time_t rtc_timer;
+int alarm_hours = 0;
+int alarm_minutes = 0;
 int buttonMode = 0;
 bool inAlarmMode = false;
 bool inTemperatureState = true;
@@ -157,7 +159,38 @@ void defaultScreen(char *time_buffer, struct tm *time_struct)
 
 void alarmScreen()
 {
+    if(button3.read())
+    {
+        if(alarm_hours >= 23)
+            alarm_hours = 0;
+        else
+            alarm_hours++;
+    }
 
+    if(button4.read())
+    {
+        if(alarm_minutes >= 59)
+            alarm_minutes = 0;
+        else
+            alarm_minutes++;
+    }
+
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    if(alarm_hours < 10)
+    {
+        if(alarm_minutes < 10)
+            lcd.printf("Alarm 0%d:0%d", alarm_hours, alarm_minutes); 
+        else
+            lcd.printf("Alarm 0%d:%d", alarm_hours, alarm_minutes);
+    }
+    else
+    {
+        if(alarm_minutes < 10)
+            lcd.printf("Alarm %d:0%d", alarm_hours, alarm_minutes);
+        else
+            lcd.printf("Alarm %d:%d", alarm_hours, alarm_minutes);
+    }
 }
 
 
