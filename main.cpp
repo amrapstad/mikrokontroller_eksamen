@@ -9,8 +9,9 @@
 #include "TCPSocket.h"
 #include "HTS221Sensor.h"
 
-// Blinking rate in milliseconds
-#define BLINKING_RATE       350ms
+// Define numbers
+#define REFRESH_RATE       1000ms
+#define BUF_LENGTH          256
 
 
 ////DEVICES////
@@ -32,6 +33,7 @@ HTS221Sensor sensor(&i2c_device);
 
 ////GLOBAL BARIABLES////
 int unix_time = 0;
+time_t rtc_timer;
 int buttonMode = 0;
 bool inAlarmMode = false;
 bool inTemperatureState = true;
@@ -40,7 +42,7 @@ float temperature;
 
 
 ////STANDARD FUNCTIONS////
-void defaultScreen();
+void defaultScreen(char *time_buffer, struct tm *time_struct);
 void alarmScreen();
 void temperatureScreen();
 void weatherScreen();
@@ -49,34 +51,55 @@ void newsScreen(const char string[], size_t stringSize);
 
 int main()
 {
+    ////STACK/HEAP VARIABLES////
     struct NewsStrings *pNews = new NewsStrings;
-
     NetworkInterface *network = NetworkInterface::get_default_instance();
+
+    // RTC time that we will use to display current time and etc.
+    char time_buffer[BUF_LENGTH] = { 0 };
+    struct tm *time_struct = nullptr;
+
+
+
     if(!network)
     {
         printf("Failed to get the default network instance\n");
         while(true);
     }
 
-    // Connect to WorldTime to get UNIX epoch time;
-    // WILL BE DONE IN A THREAD LATER
-    connect_to_WorldTime(network, unix_time);
-    
     // Connect to BBCs RSS feed to get news headlines
     // WILL BE DONE IN A THREAD LATER
-    network = NetworkInterface::get_default_instance();
     connect_to_BBC(network, pNews);
 
-    // Shows the epoch time for 5 seconds
+    // Connect to WorldTime to get UNIX epoch time;
+    // WILL BE DONE IN A THREAD LATER
+    network = NetworkInterface::get_default_instance();
+    connect_to_WorldTime(network, unix_time);
+
+    // Since the epoch time is UTC/GMT, we need to adjust so it mathces our timezone
+    // We do this by adding 2 hours or 7200 seconds (60 * 60 * 2 = 7200) to the epcoh time
+    set_time(unix_time + 7200);
+
+    // Will show the epoch time for 5 seconds and initialize the display
+    // The last print will print the actual current epoch time by subtracting the offset we added earlier
     lcd.init();
-    lcd.setCursor(0, 0);
-    lcd.printf("UNIX epoch time:");
-    lcd.setCursor(0, 1);
-    lcd.printf("%d", unix_time);
-    ThisThread::sleep_for(5000ms);
+    int time_end = unix_time + 7200 + 5;
+    while(rtc_timer < time_end)
+    {
+        rtc_timer = time(NULL);
+        lcd.setCursor(0, 0);
+        lcd.printf("UNIX epoch time:");
+        lcd.setCursor(0, 1);
+        lcd.printf("%d", rtc_timer - 7200);
+        ThisThread::sleep_for(REFRESH_RATE);
+    }
+    lcd.clear();
 
     while(true)
     {
+        rtc_timer = time(NULL);
+        time_struct = localtime(&rtc_timer);
+
         led1 = !led1;
 
         if(button1.read() && buttonMode <= 2 && !inAlarmMode)
@@ -91,7 +114,7 @@ int main()
                     inAlarmMode = !inAlarmMode;
 
                 if(!inAlarmMode)
-                    defaultScreen();
+                    defaultScreen(time_buffer, time_struct);
                 else
                     alarmScreen();
                 break;
@@ -113,16 +136,20 @@ int main()
                 break;
 
         }
-        ThisThread::sleep_for(BLINKING_RATE);
+        ThisThread::sleep_for(REFRESH_RATE);
     }
 }
 
 
 
-void defaultScreen()
+void defaultScreen(char *time_buffer, struct tm *time_struct)
 {
-    lcd.clear();
-    lcd.printf("Default!");
+    strftime(time_buffer, BUF_LENGTH, "%a %d %b %H:%M", time_struct);
+
+    lcd.setCursor(0, 0);
+    lcd.printf("%s", time_buffer);
+    lcd.setCursor(0, 1);
+    lcd.printf("Alarm");
 }
 
 
@@ -130,7 +157,10 @@ void defaultScreen()
 void alarmScreen()
 {
     lcd.clear();
-    lcd.printf("Alarm!");
+    lcd.setCursor(0, 0);
+    lcd.printf("Alarm ");
+    lcd.setCursor(0, 1);
+    lcd.printf("OFF");
 }
 
 
