@@ -10,7 +10,7 @@
 #include "HTS221Sensor.h"
 
 // Define numbers
-#define BLINKING_RATE       350ms
+#define REFRESH_RATE       1000ms
 #define BUF_LENGTH          256
 
 
@@ -79,25 +79,19 @@ int main()
     // Since the epoch time is UTC/GMT, we need to adjust so it mathces our timezone
     // We do this by adding 2 hours or 7200 seconds (60 * 60 * 2 = 7200) to the epcoh time
     set_time(unix_time + 7200);
-    rtc_timer = time(NULL);
-    // Shows the epoch time for 5 seconds
-    /*lcd.init();
-    lcd.setCursor(0, 0);
-    lcd.printf("UNIX epoch time:");
-    lcd.setCursor(0, 1);
-    lcd.printf("%d", unix_time);
-    ThisThread::sleep_for(5000ms); */
 
-    int time_end = unix_time + 7200 + 5;
-    // Will show the epoch time for 5 seconds
+    // Will show the epoch time for 5 seconds and initialize the display
     // The last print will print the actual current epoch time by subtracting the offset we added earlier
+    lcd.init();
+    int time_end = unix_time + 7200 + 5;
     while(rtc_timer < time_end)
     {
-        lcd.clear();
+        rtc_timer = time(NULL);
         lcd.setCursor(0, 0);
         lcd.printf("UNIX epoch time:");
         lcd.setCursor(0, 1);
         lcd.printf("%d", rtc_timer - 7200);
+        ThisThread::sleep_for(REFRESH_RATE);
     }
 
     while(true)
@@ -141,7 +135,7 @@ int main()
                 break;
 
         }
-        ThisThread::sleep_for(BLINKING_RATE);
+        ThisThread::sleep_for(REFRESH_RATE);
     }
 }
 
@@ -151,7 +145,6 @@ void defaultScreen(char *time_buffer, struct tm *time_struct)
 {
     strftime(time_buffer, BUF_LENGTH, "%a %d %b %H:%M", time_struct);
 
-    lcd.clear();
     lcd.setCursor(0, 0);
     lcd.printf("%s", time_buffer);
     lcd.setCursor(0, 1);
