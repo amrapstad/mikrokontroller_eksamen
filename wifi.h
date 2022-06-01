@@ -3,8 +3,6 @@
 
 #include "mbed.h"
 #include "json.hpp"
-#include "ipify_org_ca_root_certificate.h"
-#include "geolocation_cert.h"
 
 using json = nlohmann::json;
 
