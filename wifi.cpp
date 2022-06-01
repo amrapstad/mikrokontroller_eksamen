@@ -153,7 +153,7 @@ const char *get_nsapi_error_string(nsapi_error_t err) {
 
 
 
-void parse_json_data(char *input)
+void parse_json_data(char *input, int &unix_time)
 {
     json j_object = json::parse(input, nullptr, false);
 
@@ -163,6 +163,8 @@ void parse_json_data(char *input)
         return;
     }
     printf("The input is valid JSON\n");
+
+    unix_time = j_object["unixtime"].get<int>();
 }
 
 
@@ -335,7 +337,7 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
 
 
 
-void connect_to_WorldTime(NetworkInterface *network)
+void connect_to_WorldTime(NetworkInterface *network, int &unix_time)
 {
     if(!network)
     {
@@ -372,7 +374,7 @@ void connect_to_WorldTime(NetworkInterface *network)
 
     socket->open(network);
 
-    // Connecting to worldtimeapi to get timezone
+    // Connecting to worldtimeapi with public ip address to get unix time   
     const char *host = "worldtimeapi.org";
     result = network->gethostbyname(host, &address);
 
@@ -419,15 +421,10 @@ void connect_to_WorldTime(NetworkInterface *network)
 
     // Make a string out of only the json part of the response
     char *json_start = strchr(http_response, '{');
-    while(strlen(json_start) > 0)
-    {
-        if(json_start[strlen(json_start)] == '}')
-            break;
-        else
-            json_start[strlen(json_start)] = '\0';
-    }
 
-    parse_json_data(json_start);
+    parse_json_data(json_start, unix_time);
+
+    printf("Unix time: %d\n", unix_time);
 
     socket->close();
     delete socket;

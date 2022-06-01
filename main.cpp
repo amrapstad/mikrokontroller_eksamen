@@ -23,6 +23,7 @@ DigitalIn button5(PA_4, PullDown);
 
 DFRobot_RGBLCD lcd(16, 2, D14, D15);
 
+int unix_time = 0;
 int buttonMode = 0;
 bool inAlarmMode = false;
 
@@ -39,11 +40,16 @@ int main()
     NetworkInterface *network = NetworkInterface::get_default_instance();
 
     //connect_to_IpGeo();
-    connect_to_WorldTime(network);
+    connect_to_WorldTime(network, unix_time);
 
     struct NewsStrings *pNews = new NewsStrings;
 
     lcd.init();
+    lcd.setCursor(0, 0);
+    lcd.printf("UNIX epoch time:");
+    lcd.setCursor(0, 1);
+    lcd.printf("%d", unix_time);
+    ThisThread::sleep_for(5000ms);
 
     while(true)
     {
