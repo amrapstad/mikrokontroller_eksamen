@@ -33,6 +33,7 @@ HTS221Sensor sensor(&i2c_device);
 
 ////GLOBAL BARIABLES////
 int unix_time = 0;
+time_t rtc_timer;
 int buttonMode = 0;
 bool inAlarmMode = false;
 bool inTemperatureState = true;
@@ -55,9 +56,8 @@ int main()
     NetworkInterface *network = NetworkInterface::get_default_instance();
 
     // RTC time that we will use to display current time and etc.
-    time_t rtc_timer = time(NULL);
     char time_buffer[BUF_LENGTH] = { 0 };
-    struct tm *time_struct = localtime(&rtc_timer);
+    struct tm *time_struct = nullptr;
 
 
 
@@ -67,26 +67,38 @@ int main()
         while(true);
     }
 
+    // Connect to BBCs RSS feed to get news headlines
+    // WILL BE DONE IN A THREAD LATER
+    connect_to_BBC(network, pNews);
+
     // Connect to WorldTime to get UNIX epoch time;
     // WILL BE DONE IN A THREAD LATER
+    network = NetworkInterface::get_default_instance();
     connect_to_WorldTime(network, unix_time);
 
     // Since the epoch time is UTC/GMT, we need to adjust so it mathces our timezone
     // We do this by adding 2 hours or 7200 seconds (60 * 60 * 2 = 7200) to the epcoh time
     set_time(unix_time + 7200);
-    
-    // Connect to BBCs RSS feed to get news headlines
-    // WILL BE DONE IN A THREAD LATER
-    network = NetworkInterface::get_default_instance();
-    connect_to_BBC(network, pNews);
-
+    rtc_timer = time(NULL);
     // Shows the epoch time for 5 seconds
-    lcd.init();
+    /*lcd.init();
     lcd.setCursor(0, 0);
     lcd.printf("UNIX epoch time:");
     lcd.setCursor(0, 1);
     lcd.printf("%d", unix_time);
-    ThisThread::sleep_for(5000ms);
+    ThisThread::sleep_for(5000ms); */
+
+    int time_end = unix_time + 7200 + 5;
+    // Will show the epoch time for 5 seconds
+    // The last print will print the actual current epoch time by subtracting the offset we added earlier
+    while(rtc_timer < time_end)
+    {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.printf("UNIX epoch time:");
+        lcd.setCursor(0, 1);
+        lcd.printf("%d", rtc_timer - 7200);
+    }
 
     while(true)
     {
