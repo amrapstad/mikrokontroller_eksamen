@@ -41,7 +41,7 @@ float temperature;
 
 
 ////STANDARD FUNCTIONS////
-void defaultScreen();
+void defaultScreen(time_t &seconds);
 void alarmScreen();
 void temperatureScreen();
 void weatherScreen();
@@ -82,6 +82,9 @@ int main()
 
     while(true)
     {
+        // RTC time that we will use to display current time and etc.
+        time_t timer = time(NULL);
+
         led1 = !led1;
 
         if(button1.read() && buttonMode <= 2 && !inAlarmMode)
@@ -96,7 +99,9 @@ int main()
                     inAlarmMode = !inAlarmMode;
 
                 if(!inAlarmMode)
-                    defaultScreen();
+                {
+                    defaultScreen(timer);
+                }
                 else
                     alarmScreen();
                 break;
@@ -124,10 +129,19 @@ int main()
 
 
 
-void defaultScreen()
+void defaultScreen(time_t &seconds)
 {
+    char time_buffer[BUF_LENGTH] = { 0 };
+    struct tm *time_struct = localtime(&seconds);
+
+    strftime(time_buffer, BUF_LENGTH, "%a %d %b %H:%M", time_struct);
+
     lcd.clear();
-    lcd.printf("Default!");
+    lcd.setCursor(0, 0);
+    lcd.printf("%s", time_buffer);
+
+    delete time_struct;
+    time_struct = nullptr;
 }
 
 
