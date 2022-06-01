@@ -61,6 +61,10 @@ int main()
     // Connect to WorldTime to get UNIX epoch time;
     // WILL BE DONE IN A THREAD LATER
     connect_to_WorldTime(network, unix_time);
+
+    set_time(unix_time);
+    time_t currentTime = time(NULL);
+    printf("\n%u\n", currentTime);
     
     // Connect to BBCs RSS feed to get news headlines
     // WILL BE DONE IN A THREAD LATER
