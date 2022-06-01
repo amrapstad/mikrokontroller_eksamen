@@ -1,10 +1,12 @@
 #include "wifi.h"
+
 #define BLINKING_RATE 10000ms
 
+using json = nlohmann::json;
 
 
-
-nsapi_size_or_error_t send_request(Socket *socket, const char *request) {
+nsapi_size_or_error_t send_request(Socket *socket, const char *request)
+{
   if (socket == nullptr || request == nullptr) {
     printf("Invalid function parameters\n");
     return NSAPI_ERROR_PARAMETER;
@@ -37,15 +39,6 @@ nsapi_size_or_error_t send_request(Socket *socket, const char *request) {
   
   return bytes_to_send;
 }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -94,6 +87,13 @@ nsapi_size_or_error_t read_response(Socket *socket, char *buffer,
 
   return received_bytes;
 }
+
+
+
+
+
+
+
 
 
 const char *get_nsapi_error_string(nsapi_error_t err) {
@@ -153,6 +153,17 @@ const char *get_nsapi_error_string(nsapi_error_t err) {
 
 
 
+void parse_json_data(char *input)
+{
+    json j_object = json::parse(input, nullptr, false);
+
+    if (j_object.is_discarded())
+    {
+        printf("The input is invalid JSON\n");
+        return;
+    }
+    printf("The input is valid JSON\n");
+}
 
 
 
@@ -162,22 +173,9 @@ const char *get_nsapi_error_string(nsapi_error_t err) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-void connect_to_BBC(struct NewsStrings *pNews)
+void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
 {
     /*---News Feed Get Request---*/
-    NetworkInterface *network = NetworkInterface::get_default_instance();
-
     if(!network)
     {
         printf("Failed to get the default network instance\n");
@@ -252,6 +250,7 @@ void connect_to_BBC(struct NewsStrings *pNews)
     int received_bytes = 0;
 
     result = read_response(socket, response, HTTP_RESPONSE_BUF_SIZE);
+    socket->close();
 
     delete socket;
     socket = nullptr;
@@ -336,197 +335,270 @@ void connect_to_BBC(struct NewsStrings *pNews)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/////////////////////////////////////DEFAULT&ALARM/////////////////////////////////////////////////
-
-
-
-
-void connect_to_IpGeo() {
-    // Initialise the digital pin LED1 as an output
-  DigitalOut led(LED1);
-
-  // Get pointer to default network interface
-  NetworkInterface *network = NetworkInterface::get_default_instance();
-
-  if (!network) {
-    printf("Failed to get default network interface\n");
-    while (1);
-  }
-
-  nsapi_size_or_error_t result;
-
-  do {
-    printf("Connecting to the network...\n");
-    result = network->connect();
-
-    if (result != NSAPI_ERROR_OK) {
-      printf("Failed to connect to network: %d\n", result);
-    }
-  } while (result != NSAPI_ERROR_OK);
-
-  SocketAddress address;
-  result = network->get_ip_address(&address);
-
-  if (result != NSAPI_ERROR_OK) {
-    printf("Failed to get local IP address: %s\n",
-           get_nsapi_error_string(result));
-    while (1);
-  }
-
-  printf("Connected to WLAN and got IP address %s\n", address.get_ip_address());
-
-  while (true) {
-    led = !led;
-    ThisThread::sleep_for(BLINKING_RATE);
-
-    // TLSSocket is used for HTTPS (HTTP secured with TLS/SSL)
-    // This TLS socket is allocated on stack and takes approx 1500 bytes of
-    // stack memory. So make sure you have enough stack size
-    TLSSocket socket;
-
-    //TCPSocket socket;
-    // Alternatively you might allocate from heap:
-    // TLSSocket *socket = new TLSSocket;
-    // but then you MUST remember to free up memory when then local variable
-    // holding the pointer to the allocated socket object goes out of scope:
-    // delete socket;
-    // Otherwise you have created a memory leak
-
-    // Configure timeout on socket receive
-    // (returns NSAPI_ERROR_WOULD_BLOCK on timeout)
-    socket.set_timeout(500);
-
-    result = socket.open(network);
-
-    if (result != NSAPI_ERROR_OK) {
-      printf("Failed to open TLSSocket: %s\n", get_nsapi_error_string(result));
-      continue;
+void connect_to_WorldTime(NetworkInterface *network)
+{
+    if(!network)
+    {
+        printf("Failed to get the default network instance\n");
+        while(true);
     }
 
-    const char host[] = "ipgeolocation.io"; // Host api.ipify.org will not work
-    socket.set_hostname("ipgelocation.io");
-    // Get IP address of host (web server) by name
+    nsapi_size_or_error_t result;
+
+    do
+    {
+        printf("Connecting to network...\n");
+        result = network->connect();
+
+        if(result != 0)
+        {
+            printf("Failed to connect to network: %d\n", result);
+        }
+    } while(result != 0);
+
+    printf("Connected to network successfully\n");
+
+
+    SocketAddress address;
+    network->get_ip_address(&address);
+
+    TCPSocket *socket = new TCPSocket;
+
+    if(socket == nullptr)
+    {
+        printf("Failed to allocate socket instance\n");
+        while(true);
+    }
+
+    socket->open(network);
+
+    // Connecting to worldtimeapi to get timezone
+    const char *host = "worldtimeapi.org";
     result = network->gethostbyname(host, &address);
 
-    if (result != NSAPI_ERROR_OK) {
-      printf("Failed to get IP address of host %s: %s\n", host,
-             get_nsapi_error_string(result));
-      continue;
+    if(result != NSAPI_ERROR_OK)
+    {
+        printf("Failed to get IP address of host %s: %d\n", host, result);
+        while(1);
     }
 
     printf("IP address of server %s is %s\n", host, address.get_ip_address());
 
-    // Set server TCP port number, 443 for HTTPS
-    address.set_port(443);
+    address.set_port(80);
 
-    // Set the root certificate of the web site.
-    // See include/ipify_org_ca_root_certificate.h for how to download the cert.
-    
-    
-    result = socket.set_root_ca_cert(ipgelocation_cert);
+    result = socket->connect(address);
 
-    if (result != NSAPI_ERROR_OK) {
-      printf("Failed to set root certificate of the web site: %s\n",
-             get_nsapi_error_string(result));
-      continue;
-    }
-
-
-
-    // Connect to server at the given address
-    result = socket.connect(address);
-
-    // Check result
-    if (result != NSAPI_ERROR_OK) {
-      printf("Failed to connect to server at %s: %s\n", host,
-             get_nsapi_error_string(result));
-      continue;
+    if(result != NSAPI_ERROR_OK)
+    {
+        printf("Failed to connect to server at %s: %d\n", host, result);
+        while(1);
     }
 
     printf("Successfully connected to server %s\n", host);
 
-    // Create HTTP request
-    const char request[] = "GET /timezone?apiKey=5defbecf65e142df8a1b8cfe268da55d HTTP/1.1\r\n"
-                           "Host: api.ipgeolocation.org\r\n"
+    // Get the timezone for oslo (Grimstads timezone as well)
+    const char request[] = "GET /api/ip HTTP/1.1\r\n"
+                           "Host: worldtimeapi.org\r\n"
                            "Connection: close\r\n"
                            "\r\n";
 
-    // Send request
-    result = send_request(&socket, request);
-
-    // Check result
-    if (result < 0) {
-      printf("Failed to send request: %d\n", result);
-      continue;
+    result = send_request(socket, request);
+    if(result != 0)
+    {
+        printf("Failed to send request: %d\n", result);
+        socket->close();
     }
 
-    // We need to read the response into memory. The destination is called a
-    // buffer. If you make this buffer static it will be placed in BSS and won't
-    // use stack memory.
-    static char buffer[2000];
+    // Receive data
+    static constexpr size_t HTTP_RESPONSE_BUF_SIZE = 4000;
+    static char http_response[HTTP_RESPONSE_BUF_SIZE] = { 0 };
+    int remaining_bytes = HTTP_RESPONSE_BUF_SIZE;
+    int received_bytes = 0;
 
-    // Read response
-    result = read_response(&socket, buffer, sizeof(buffer));
+    result = read_response(socket, http_response, HTTP_RESPONSE_BUF_SIZE);
 
-    // Check result
-    if (result < 0) {
-      printf("Failed to read response: %d\n", result);
-      continue;
+    // Make a string out of only the json part of the response
+    char *json_start = strchr(http_response, '{');
+    while(strlen(json_start) > 0)
+    {
+        if(json_start[strlen(json_start)] == '}')
+            break;
+        else
+            json_start[strlen(json_start)] = '\0';
     }
 
-    // Find the start and end of the JSON data.
-    // If the JSON response is an array you need to replace this with [ and ]
-    char *json_begin = strchr(buffer, '{');
-    char *json_end = strrchr(buffer, '}');
+    parse_json_data(json_start);
 
-    // Check if we actually got JSON in the response
-    if (json_begin == nullptr || json_end == nullptr) {
-      printf("Failed to find JSON in response\n");
-      continue;
+    socket->close();
+    delete socket;
+    socket = nullptr;
+}
+
+
+
+
+/*
+/////////////////////////////////////DEFAULT&ALARM/////////////////////////////////////////////////
+void connect_to_IpGeo() {
+    // Get pointer to default network interface
+    NetworkInterface *network = NetworkInterface::get_default_instance();
+
+    if (!network) {
+        printf("Failed to get default network interface\n");
+        while (1);
     }
 
-    /*
+    nsapi_size_or_error_t result;
 
-    // End the string after the end of the JSON data in case the response
-    // contains trailing data
-    json_end[1] = 0;
+    do {
+        printf("Connecting to the network...\n");
+        result = network->connect();
 
-    printf("JSON response:\n");
-    printf("%s\n", json_begin);
+        if (result != NSAPI_ERROR_OK) {
+        printf("Failed to connect to network: %d\n", result);
+        }
+    } while (result != NSAPI_ERROR_OK);
 
-    // Parse response as JSON, starting from the first {
-    json document = json::parse(json_begin);
+    SocketAddress address;
+    result = network->get_ip_address(&address);
 
-    if (document.is_discarded()) {
-      printf("The input is invalid JSON\n");
-      continue;
+    if (result != NSAPI_ERROR_OK) {
+        printf("Failed to get local IP address: %s\n",
+            get_nsapi_error_string(result));
+        while (1);
     }
 
-    // Get IP address from JSON object
-    std::string ip;
-    document["ip"].get_to(ip);
+    printf("Connected to WLAN and got IP address %s\n", address.get_ip_address());
 
-    printf("IP from JSON data: %s\n", ip.c_str());
-    */
-  }
+    while (true) {
+        // TLSSocket is used for HTTPS (HTTP secured with TLS/SSL)
+        // This TLS socket is allocated on stack and takes approx 1500 bytes of
+        // stack memory. So make sure you have enough stack size
+        TLSSocket socket;
+
+        //TCPSocket socket;
+        // Alternatively you might allocate from heap:
+        // TLSSocket *socket = new TLSSocket;
+        // but then you MUST remember to free up memory when then local variable
+        // holding the pointer to the allocated socket object goes out of scope:
+        // delete socket;
+        // Otherwise you have created a memory leak
+
+        // Configure timeout on socket receive
+        // (returns NSAPI_ERROR_WOULD_BLOCK on timeout)
+        socket.set_timeout(500);
+
+        result = socket.open(network);
+
+        if (result != NSAPI_ERROR_OK) {
+        printf("Failed to open TLSSocket: %s\n", get_nsapi_error_string(result));
+        continue;
+        }
+
+        const char host[] = "ipgeolocation.io"; // Host api.ipify.org will not work
+        socket.set_hostname("ipgelocation.io");
+        // Get IP address of host (web server) by name
+        result = network->gethostbyname(host, &address);
+
+        if (result != NSAPI_ERROR_OK) {
+        printf("Failed to get IP address of host %s: %s\n", host,
+                get_nsapi_error_string(result));
+        continue;
+        }
+
+        printf("IP address of server %s is %s\n", host, address.get_ip_address());
+
+        // Set server TCP port number, 443 for HTTPS
+        address.set_port(443);
+
+        // Set the root certificate of the web site.
+        // See include/ipify_org_ca_root_certificate.h for how to download the cert.
+        
+        
+        result = socket.set_root_ca_cert(ipgelocation_cert);
+
+        if (result != NSAPI_ERROR_OK) {
+        printf("Failed to set root certificate of the web site: %s\n",
+                get_nsapi_error_string(result));
+        continue;
+        }
+
+
+
+        // Connect to server at the given address
+        result = socket.connect(address);
+
+        // Check result
+        if (result != NSAPI_ERROR_OK) {
+        printf("Failed to connect to server at %s: %s\n", host,
+                get_nsapi_error_string(result));
+        continue;
+        }
+
+        printf("Successfully connected to server %s\n", host);
+
+        // Create HTTP request
+        const char request[] = "GET /timezone?apiKey=5defbecf65e142df8a1b8cfe268da55d HTTP/1.1\r\n"
+                            "Host: api.ipgeolocation.org\r\n"
+                            "Connection: close\r\n"
+                            "\r\n";
+
+        // Send request
+        result = send_request(&socket, request);
+
+        // Check result
+        if (result < 0) {
+        printf("Failed to send request: %d\n", result);
+        continue;
+        }
+
+        // We need to read the response into memory. The destination is called a
+        // buffer. If you make this buffer static it will be placed in BSS and won't
+        // use stack memory.
+        static char buffer[2000];
+
+        // Read response
+        result = read_response(&socket, buffer, sizeof(buffer));
+
+        // Check result
+        if (result < 0) {
+        printf("Failed to read response: %d\n", result);
+        continue;
+        }
+
+        // Find the start and end of the JSON data.
+        // If the JSON response is an array you need to replace this with [ and ]
+        char *json_begin = strchr(buffer, '{');
+        char *json_end = strrchr(buffer, '}');
+
+        // Check if we actually got JSON in the response
+        if (json_begin == nullptr || json_end == nullptr) {
+        printf("Failed to find JSON in response\n");
+        continue;
+        }
+
+
+        // End the string after the end of the JSON data in case the response
+        // contains trailing data
+        json_end[1] = 0;
+
+        printf("JSON response:\n");
+        printf("%s\n", json_begin);
+
+        // Parse response as JSON, starting from the first {
+        json document = json::parse(json_begin);
+
+        if (document.is_discarded()) {
+        printf("The input is invalid JSON\n");
+        continue;
+        }
+
+        // Get IP address from JSON object
+        std::string ip;
+        document["ip"].get_to(ip);
+
+        printf("IP from JSON data: %s\n", ip.c_str());
+        
+    }
 } 
+*/

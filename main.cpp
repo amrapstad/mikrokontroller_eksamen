@@ -36,7 +36,10 @@ void newsScreen(const char string[], size_t stringSize);
 
 int main()
 {
-    connect_to_IpGeo();
+    NetworkInterface *network = NetworkInterface::get_default_instance();
+
+    //connect_to_IpGeo();
+    connect_to_WorldTime(network);
 
     struct NewsStrings *pNews = new NewsStrings;
 
