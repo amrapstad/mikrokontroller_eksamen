@@ -41,7 +41,7 @@ float temperature;
 
 
 ////STANDARD FUNCTIONS////
-void defaultScreen(time_t &seconds);
+void defaultScreen(char *time_buffer, struct tm *time_struct);
 void alarmScreen();
 void temperatureScreen();
 void weatherScreen();
@@ -50,9 +50,17 @@ void newsScreen(const char string[], size_t stringSize);
 
 int main()
 {
+    ////STACK/HEAP VARIABLES////
     struct NewsStrings *pNews = new NewsStrings;
-
     NetworkInterface *network = NetworkInterface::get_default_instance();
+
+    // RTC time that we will use to display current time and etc.
+    time_t rtc_timer = time(NULL);
+    char time_buffer[BUF_LENGTH] = { 0 };
+    struct tm *time_struct = localtime(&rtc_timer);
+
+
+
     if(!network)
     {
         printf("Failed to get the default network instance\n");
@@ -82,8 +90,8 @@ int main()
 
     while(true)
     {
-        // RTC time that we will use to display current time and etc.
-        time_t timer = time(NULL);
+        rtc_timer = time(NULL);
+        time_struct = localtime(&rtc_timer);
 
         led1 = !led1;
 
@@ -99,9 +107,7 @@ int main()
                     inAlarmMode = !inAlarmMode;
 
                 if(!inAlarmMode)
-                {
-                    defaultScreen(timer);
-                }
+                    defaultScreen(time_buffer, time_struct);
                 else
                     alarmScreen();
                 break;
@@ -129,21 +135,15 @@ int main()
 
 
 
-void defaultScreen(time_t &seconds)
+void defaultScreen(char *time_buffer, struct tm *time_struct)
 {
-    char time_buffer[BUF_LENGTH] = { 0 };
-    struct tm *time_struct = localtime(&seconds);
-
     strftime(time_buffer, BUF_LENGTH, "%a %d %b %H:%M", time_struct);
 
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.printf("%s", time_buffer);
     lcd.setCursor(0, 1);
-    lcd.printf("Alarm")
-
-    delete time_struct;
-    time_struct = nullptr;
+    lcd.printf("Alarm");
 }
 
 
