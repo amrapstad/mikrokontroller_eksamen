@@ -11,7 +11,6 @@
 
 // Blinking rate in milliseconds
 #define BLINKING_RATE       350ms
-#define WAIT_TIME_MS        1000
 
 
 ////DEVICES////
@@ -137,7 +136,6 @@ void change_temp_state()
 }
 void temperatureScreen()
 {
-
     lcd.clear();
 
     if (sensor.init(NULL) != 0) {

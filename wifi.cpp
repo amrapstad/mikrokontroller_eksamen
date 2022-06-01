@@ -1,8 +1,13 @@
 #include "wifi.h"
 
-#define BLINKING_RATE 10000ms
-
 using json = nlohmann::json;
+
+
+
+
+
+
+
 
 
 nsapi_size_or_error_t send_request(Socket *socket, const char *request)
@@ -178,12 +183,11 @@ void parse_json_data(char *input, int &unix_time)
 void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
 {
     /*---News Feed Get Request---*/
-    
     nsapi_size_or_error_t result;
 
     do
     {
-        printf("\nConnecting to network for World Time...\n");
+        printf("\nConnecting to network for BBC...\n");
         result = network->connect();
 
         if(result != 0)
@@ -336,10 +340,9 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
 void connect_to_WorldTime(NetworkInterface *network, int &unix_time)
 {
     nsapi_size_or_error_t result;
-
     do
     {
-        printf("\nConnecting to network for BBC...\n");
+        printf("\nConnecting to network for World Time...\n");
         result = network->connect();
 
         if(result != 0)
