@@ -34,9 +34,9 @@ HTS221Sensor sensor(&i2c_device);
 int unix_time = 0;
 int buttonMode = 0;
 bool inAlarmMode = false;
+bool temp_state = true;
 float humidity;
 float temperature;
-bool temp_state = true;
 
 
 ////STANDARD FUNCTIONS////
