@@ -10,8 +10,8 @@
 #include "HTS221Sensor.h"
 
 // Blinking rate in milliseconds
-#define BLINKING_RATE     350ms
-#define WAIT_TIME_MS 1000
+#define BLINKING_RATE       350ms
+#define WAIT_TIME_MS        1000
 
 DigitalOut led1(LED1);
 
@@ -39,8 +39,8 @@ bool temp_state = true;
 
 ////FOR TEMP&HUMID///////
 InterruptIn button(PA_0, PullDown);
-DevI2C I2c(PB_11, PB_10);
-HTS221Sensor Sensor(&I2c);
+DevI2C i2c_device(PB_11, PB_10);
+HTS221Sensor Sensor(&i2c_device);
 bool temperatureState;
 void smart() {
     temp_state = !temp_state;
@@ -56,12 +56,21 @@ int main()
 {
     struct NewsStrings *pNews = new NewsStrings;
 
-    // Get the default network instance for all the connections that are required
     NetworkInterface *network = NetworkInterface::get_default_instance();
+    if(!network)
+    {
+        printf("Failed to get the default network instance\n");
+        while(true);
+    }
 
     // Connect to WorldTime to get UNIX epoch time;
     // WILL BE DONE IN A THREAD LATER
     connect_to_WorldTime(network, unix_time);
+    
+    // Connect to BBCs RSS feed to get news headlines
+    // WILL BE DONE IN A THREAD LATER
+    network = NetworkInterface::get_default_instance();
+    connect_to_BBC(network, pNews);
 
     // Shows the epoch time for 5 seconds
     lcd.init();

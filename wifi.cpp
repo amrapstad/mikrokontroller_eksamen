@@ -178,12 +178,7 @@ void parse_json_data(char *input, int &unix_time)
 void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
 {
     /*---News Feed Get Request---*/
-    if(!network)
-    {
-        printf("Failed to get the default network instance\n");
-        while(true);
-    }
-
+    
     nsapi_size_or_error_t result;
 
     do
@@ -257,6 +252,8 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
     delete socket;
     socket = nullptr;
 
+    network->disconnect();
+
 
     if(result < 0)
     {
@@ -264,11 +261,10 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
     }
 
     response[result] = '\0';
-    //printf("\nThe HTTP GET response:\n%s\n", response);
    
     char *temp = std::move(response);
 
-    /*--- Making three strings out of the XML response and storing them in the struct ---*/
+/*--- Making three strings out of the XML response and storing them in the struct ---*/
     char firstString[200] = { 0 };
     char secondString[200] = { 0 };
     char thirdString[200] = { 0 };
@@ -339,12 +335,6 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
 
 void connect_to_WorldTime(NetworkInterface *network, int &unix_time)
 {
-    if(!network)
-    {
-        printf("Failed to get the default network instance\n");
-        while(true);
-    }
-
     nsapi_size_or_error_t result;
 
     do
@@ -429,4 +419,6 @@ void connect_to_WorldTime(NetworkInterface *network, int &unix_time)
     socket->close();
     delete socket;
     socket = nullptr;
+
+    network->disconnect();
 }
