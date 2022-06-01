@@ -318,10 +318,14 @@ void connect_to_BBC(struct NewsStrings *pNews)
     thirdString[strlen(thirdString) - strlen(closingWrap)] = '\0';
 
 
-// Printing strings
-    strcpy(pNews->firstString, firstString);
-    strcpy(pNews->secondString, secondString);
-    strcpy(pNews->thirdString, thirdString);
+// Composing three strings into one
+    strcat(pNews->headlineString, firstString);
+    for (int i = 0; i < 16; i++)
+        strcat(pNews->headlineString, " ");
+    strcat(pNews->headlineString, secondString);
+    for (int i = 0; i < 16; i++)
+        strcat(pNews->headlineString, " ");
+    strcat(pNews->headlineString, thirdString);
 } 
 
 
@@ -525,4 +529,4 @@ void connect_to_IpGeo() {
     printf("IP from JSON data: %s\n", ip.c_str());
     */
   }
-}
+} 

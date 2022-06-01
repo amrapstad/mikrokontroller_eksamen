@@ -1,17 +1,12 @@
-/* mbed Microcontroller Library
- * Copyright (c) 2019 ARM Limited
- * SPDX-License-Identifier: Apache-2.0
- */
-
-#include "BufferedSerial.h"
-#include "NetworkInterface.h"
-#include "SocketAddress.h"
-#include "TCPSocket.h"
 #include "mbed.h"
 #include "DFRobot_RGBLCD.h"
 #include "nsapi_types.h"
 #include "wifi.h"
 #include <string.h>
+#include "BufferedSerial.h"
+#include "NetworkInterface.h"
+#include "SocketAddress.h"
+#include "TCPSocket.h"
 
 // Blinking rate in milliseconds
 #define BLINKING_RATE     350ms
@@ -28,32 +23,22 @@ DigitalIn button5(PA_4, PullDown);
 
 DFRobot_RGBLCD lcd(16, 2, D14, D15);
 
-char test[] = "Russian oil: EU agrees compromise deal on banning imports";
-int cursorPos = 15;
 int buttonMode = 0;
 bool inAlarmMode = false;
 
 void defaultScreen();
-
 void alarmScreen();
-
 void temperatureScreen();
-
 void weatherScreen();
+void newsScreen(const char string[], size_t stringSize);
 
-void newsScreen(char string[], size_t stringSize);
+
 
 int main()
 {
     connect_to_IpGeo();
 
-    /*
     struct NewsStrings *pNews = new NewsStrings;
-    connect_to_BBC(pNews);
-    printf("%s\n", pNews->firstString);
-    printf("%s\n", pNews->secondString);
-    printf("%s\n", pNews->thirdString);
-    */
 
     lcd.init();
 
@@ -87,7 +72,7 @@ int main()
                 break;
 
             case 3:
-                newsScreen(test, strlen(test));
+                newsScreen(pNews->headlineString, strlen(pNews->headlineString));
                 break;
 
         }
@@ -96,11 +81,14 @@ int main()
 }
 
 
+
 void defaultScreen()
 {
     lcd.clear();
     lcd.printf("Default!");
 }
+
+
 
 void alarmScreen()
 {
@@ -108,11 +96,15 @@ void alarmScreen()
     lcd.printf("Alarm!");
 }
 
+
+
 void temperatureScreen()
 {
     lcd.clear();
     lcd.printf("Temperature!");
 }
+
+
 
 void weatherScreen()
 {
@@ -120,14 +112,17 @@ void weatherScreen()
     lcd.printf("Weather!");
 }
 
-void newsScreen(char newsString[], size_t stringSize)
+
+
+void newsScreen(const char inputString[], size_t stringSize)
 {
     // lcd.setCursor(horizontal, vertical)
     // Horizontal: 0-15
     // Vertical: 0-1
     int totalColumns = 16;
-    static int newsStringBufferStart = 1;
-    static int newsStringBufferEnd = 1;
+    static int cursorPos = 15;
+    static int newsStringBufferStart = 0;
+    static int newsStringBufferEnd = 0;
 
     lcd.clear();
 
@@ -135,42 +130,47 @@ void newsScreen(char newsString[], size_t stringSize)
     lcd.printf("BBC News:");
 
     lcd.setCursor(cursorPos, 1);
+
+    // Prints string when the first letter doesn't touch the left side
     if(cursorPos > 0)
     {
-        // Prints string when the first letter doesn't touch the right side
-        for(int i = 0; i < newsStringBufferEnd; i++)
+        for(int i = 0; i < newsStringBufferEnd + 1; i++)
         {
-            lcd.printf("%c", newsString[i]);
+            lcd.printf("%c", inputString[i]);
             cursorPos++;
         }
         newsStringBufferEnd++;
-        cursorPos -= newsStringBufferEnd;
+        cursorPos -= newsStringBufferEnd + 1;
     }
-    else if(newsStringBufferEnd <= stringSize)
+    else if(newsStringBufferStart < stringSize)
     {
-        // Prints string when it fills the whole row
-        for(int i = -1; i < totalColumns - 1; i++)
+        // Prints string when it fill the whole display 
+        if(newsStringBufferEnd < stringSize)
         {
-            lcd.printf("%c", newsString[newsStringBufferStart + i]);
-            cursorPos++;
+            for(int i = 0; i < totalColumns; i++)
+            {
+                lcd.printf("%c", inputString[newsStringBufferStart + i]);
+                cursorPos++;
+            }
         }
-        newsStringBufferEnd++;
-        newsStringBufferStart++;
-        cursorPos = 0;
-    }
-    else if(newsStringBufferStart > 0)
-    {
         // Prints string when the last letter doesn't touch the right side
-        for(int i = 0; i < newsStringBufferStart; i++)
+        else
         {
-            lcd.printf("%c", newsString[stringSize - newsStringBufferStart + i]);
-            cursorPos++;
+            for(int i = 0; i < stringSize - newsStringBufferStart; i++)
+            {
+                lcd.printf("%c", inputString[ newsStringBufferStart + i]);
+            }
         }
-        newsStringBufferStart--;
+        newsStringBufferStart++;
+        newsStringBufferEnd++;
         cursorPos = 0;
     }
     else
     {
+        // Resets scrolling
+        cursorPos = 15;
+        newsStringBufferStart = 0;
+        newsStringBufferEnd = 0;
         return;
     }
 }
