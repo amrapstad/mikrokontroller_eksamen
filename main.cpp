@@ -151,7 +151,10 @@ void defaultScreen(char *time_buffer, struct tm *time_struct)
 void alarmScreen()
 {
     lcd.clear();
-    lcd.printf("Alarm!");
+    lcd.setCursor(0, 0);
+    lcd.printf("Alarm ");
+    lcd.setCursor(0, 1);
+    lcd.printf("OFF");
 }
 
 
