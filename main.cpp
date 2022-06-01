@@ -45,11 +45,15 @@ void newsScreen(char string[], size_t stringSize);
 
 int main()
 {
+    connect_to_IpGeo();
+
+    /*
     struct NewsStrings *pNews = new NewsStrings;
     connect_to_BBC(pNews);
     printf("%s\n", pNews->firstString);
     printf("%s\n", pNews->secondString);
     printf("%s\n", pNews->thirdString);
+    */
 
     lcd.init();
 

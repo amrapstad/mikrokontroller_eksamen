@@ -352,7 +352,7 @@ void connect_to_BBC(struct NewsStrings *pNews)
 
 
 
-
+/////////////////////////////////////DEFAULT&ALARM/////////////////////////////////////////////////
 
 
 
@@ -399,6 +399,8 @@ void connect_to_IpGeo() {
     // This TLS socket is allocated on stack and takes approx 1500 bytes of
     // stack memory. So make sure you have enough stack size
     TLSSocket socket;
+
+    //TCPSocket socket;
     // Alternatively you might allocate from heap:
     // TLSSocket *socket = new TLSSocket;
     // but then you MUST remember to free up memory when then local variable
@@ -417,7 +419,8 @@ void connect_to_IpGeo() {
       continue;
     }
 
-    const char host[] = "ipify.org"; // Host api.ipify.org will not work
+    const char host[] = "ipgeolocation.io"; // Host api.ipify.org will not work
+    socket.set_hostname("ipgelocation.io");
     // Get IP address of host (web server) by name
     result = network->gethostbyname(host, &address);
 
@@ -434,13 +437,17 @@ void connect_to_IpGeo() {
 
     // Set the root certificate of the web site.
     // See include/ipify_org_ca_root_certificate.h for how to download the cert.
-    result = socket.set_root_ca_cert(ipify_org_ca_root_certificate);
+    
+    
+    result = socket.set_root_ca_cert(ipgelocation_cert);
 
     if (result != NSAPI_ERROR_OK) {
       printf("Failed to set root certificate of the web site: %s\n",
              get_nsapi_error_string(result));
       continue;
     }
+
+
 
     // Connect to server at the given address
     result = socket.connect(address);
@@ -455,8 +462,8 @@ void connect_to_IpGeo() {
     printf("Successfully connected to server %s\n", host);
 
     // Create HTTP request
-    const char request[] = "GET /?format=json HTTP/1.1\r\n"
-                           "Host: api.ipify.org\r\n"
+    const char request[] = "GET /timezone?apiKey=5defbecf65e142df8a1b8cfe268da55d HTTP/1.1\r\n"
+                           "Host: api.ipgeolocation.org\r\n"
                            "Connection: close\r\n"
                            "\r\n";
 

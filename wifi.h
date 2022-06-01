@@ -3,6 +3,8 @@
 
 #include "mbed.h"
 #include "ipify_org_ca_root_certificate.h"
+#include "geolocation_cert.h"
+
 
 struct NewsStrings
 {
