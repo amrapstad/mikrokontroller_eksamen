@@ -19,7 +19,7 @@ DigitalOut led1(LED1);
 BufferedSerial pc(USBTX, USBRX, 115200);
 
 DigitalIn button1(PA_1, PullDown);
-InterruptIn button2(PA_0);
+DigitalIn button2(PA_0, PullDown);
 DigitalIn button3(PD_14, PullDown);
 DigitalIn button4(PA_3, PullDown);
 DigitalIn button5(PA_4, PullDown);
@@ -34,7 +34,7 @@ HTS221Sensor sensor(&i2c_device);
 int unix_time = 0;
 int buttonMode = 0;
 bool inAlarmMode = false;
-bool temp_state = true;
+bool inTemperatureState = true;
 float humidity;
 float temperature;
 
@@ -97,6 +97,9 @@ int main()
                 break;
 
             case 1:
+                if(button2.read())
+                    inTemperatureState = !inTemperatureState;
+                
                 temperatureScreen();
                 break;
 
@@ -130,10 +133,8 @@ void alarmScreen()
     lcd.printf("Alarm!");
 }
 
-void change_temp_state()
-{
-    temp_state = !temp_state;
-}
+
+
 void temperatureScreen()
 {
     lcd.clear();
@@ -148,17 +149,17 @@ void temperatureScreen()
 
         sensor.get_temperature(&temperature);
         sensor.get_humidity(&humidity);
-
-        
-        button2.fall(&change_temp_state);
-        if (temp_state == true) {
+       
+        if (inTemperatureState)
+        {
             lcd.clear();
             lcd.setCursor(1,0);
             lcd.printf("Temperature:");
             lcd.setCursor(0,1);
             lcd.printf(" %.1f C", temperature);
         }
-        if (temp_state == false) {
+        else if(!inTemperatureState)
+        {
             lcd.clear();
             lcd.setCursor(1,0);
             lcd.printf("Fuktighet:");
@@ -166,19 +167,19 @@ void temperatureScreen()
             lcd.printf(" %.1f %%", humidity);
         }
 
-        //Temperatur RGB
-        if (temperature < 20 && temp_state == true) {
+        //Temperature RGB
+        if (temperature < 20 && inTemperatureState) {
             lcd.setColor(BLUE);
         }
-        if  (temperature >= 20 && temperature <= 24 && temp_state == true) {
+        if  (temperature >= 20 && temperature <= 24 && inTemperatureState) {
             lcd.setRGB(255, 165, 0);
         } 
-        if  (temperature > 24 && temp_state == true) {
+        if  (temperature > 24 && inTemperatureState) {
             lcd.setColor(RED);
         } 
 
-        //Fuktighet RGB
-        if  (humidity > 0 && temp_state == false)
+        //Humidity RGB
+        if  (humidity > 0 && !inTemperatureState)
         {
             float humidity_meter=2.55*humidity;
             lcd.setRGB(255-humidity_meter, 255-humidity_meter, 255);

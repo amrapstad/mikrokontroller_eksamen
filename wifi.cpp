@@ -158,7 +158,7 @@ const char *get_nsapi_error_string(nsapi_error_t err) {
 
 
 
-void parse_json_data(char *input, int &unix_time)
+void parse_json_to_epoch(char *input, int &unix_time)
 {
     json j_object = json::parse(input, nullptr, false);
 
@@ -415,7 +415,7 @@ void connect_to_WorldTime(NetworkInterface *network, int &unix_time)
     // Make a string out of only the json part of the response
     char *json_start = strchr(http_response, '{');
 
-    parse_json_data(json_start, unix_time);
+    parse_json_to_epoch(json_start, unix_time);
 
     printf("Unix time: %d\n", unix_time);
 
