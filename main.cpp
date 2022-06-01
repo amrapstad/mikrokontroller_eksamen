@@ -163,7 +163,7 @@ void temperatureScreen()
             lcd.setCursor(1,0);
             lcd.printf("Fuktighet:");
             lcd.setCursor(0,1);
-            lcd.printf(" %.1f %", humidity);
+            lcd.printf(" %.1f %%", humidity);
         }
 
         //Temperatur RGB
@@ -178,11 +178,11 @@ void temperatureScreen()
         } 
 
         //Fuktighet RGB
-        if  (humidity > 0 && temp_state == false) {
-                float humidity_meter=2.55*humidity;
-                lcd.setRGB(255-humidity_meter, 255-humidity_meter, 255);
-            }
-        //printf("Fuktighet: %.1f  Temperatur: %.1f\n", humidity, temperature);
+        if  (humidity > 0 && temp_state == false)
+        {
+            float humidity_meter=2.55*humidity;
+            lcd.setRGB(255-humidity_meter, 255-humidity_meter, 255);
+        }
 }
 
 
