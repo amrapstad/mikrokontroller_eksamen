@@ -183,7 +183,7 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
 
     do
     {
-        printf("Connecting to network...\n");
+        printf("\nConnecting to network for World Time...\n");
         result = network->connect();
 
         if(result != 0)
@@ -215,7 +215,7 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
     if(result != NSAPI_ERROR_OK)
     {
         printf("Failed to get IP address of host %s: %d\n", host, result);
-        while(1);
+        while(true);
     }
 
     printf("IP address of server %s is %s\n", host, address.get_ip_address());
@@ -227,7 +227,7 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
     if(result != NSAPI_ERROR_OK)
     {
         printf("Failed to connect to server at %s: %d\n", host, result);
-        while(1);
+        while(true);
     }
 
     printf("Successfully connected to server %s\n", host);
@@ -339,7 +339,7 @@ void connect_to_WorldTime(NetworkInterface *network, int &unix_time)
 
     do
     {
-        printf("Connecting to network...\n");
+        printf("\nConnecting to network for BBC...\n");
         result = network->connect();
 
         if(result != 0)
@@ -371,7 +371,7 @@ void connect_to_WorldTime(NetworkInterface *network, int &unix_time)
     if(result != NSAPI_ERROR_OK)
     {
         printf("Failed to get IP address of host %s: %d\n", host, result);
-        while(1);
+        while(true);
     }
 
     printf("IP address of server %s is %s\n", host, address.get_ip_address());
@@ -383,7 +383,7 @@ void connect_to_WorldTime(NetworkInterface *network, int &unix_time)
     if(result != NSAPI_ERROR_OK)
     {
         printf("Failed to connect to server at %s: %d\n", host, result);
-        while(1);
+        while(true);
     }
 
     printf("Successfully connected to server %s\n", host);
