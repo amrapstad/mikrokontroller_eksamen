@@ -139,6 +139,8 @@ void defaultScreen(time_t &seconds)
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.printf("%s", time_buffer);
+    lcd.setCursor(0, 1);
+    lcd.printf("Alarm")
 
     delete time_struct;
     time_struct = nullptr;
