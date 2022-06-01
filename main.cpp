@@ -7,9 +7,11 @@
 #include "NetworkInterface.h"
 #include "SocketAddress.h"
 #include "TCPSocket.h"
+#include "HTS221Sensor.h"
 
 // Blinking rate in milliseconds
 #define BLINKING_RATE     350ms
+#define WAIT_TIME_MS 1000
 
 DigitalOut led1(LED1);
 
@@ -32,6 +34,21 @@ void alarmScreen();
 void temperatureScreen();
 void weatherScreen();
 void newsScreen(const char string[], size_t stringSize);
+
+bool temp_state = true;
+
+////FOR TEMP&HUMID///////
+InterruptIn button(PA_0, PullDown);
+DevI2C I2c(PB_11, PB_10);
+HTS221Sensor Sensor(&I2c);
+bool temperatureState;
+void smart() {
+    temp_state = !temp_state;
+}    
+bool pressed_ones = false;
+int option;
+float fuktighet;
+float temperatur;
 
 
 
@@ -80,6 +97,7 @@ int main()
                 break;
 
             case 2:
+                lcd.setColorWhite();
                 weatherScreen();
                 break;
 
@@ -97,7 +115,7 @@ int main()
 void defaultScreen()
 {
     lcd.clear();
-    lcd.printf("Default!");
+    lcd.printf("DEFAULT!");
 }
 
 
@@ -113,7 +131,53 @@ void alarmScreen()
 void temperatureScreen()
 {
     lcd.clear();
-    lcd.printf("Temperature!");
+
+    if (Sensor.init(NULL) != 0) {
+        printf("Initialization of device failed\n");
+    }
+
+    if (Sensor.enable() !=0) {
+        printf("Failed to enable device\n");
+    }
+
+        Sensor.get_temperature(&temperatur);
+        Sensor.get_humidity(&fuktighet);
+
+        
+        button.fall(&smart);
+        if (temp_state == true) {
+            lcd.clear();
+            lcd.setCursor(1,0);
+            lcd.printf("Temperatur:");
+            lcd.setCursor(0,1);
+            lcd.printf(" %.1f", temperatur);
+        }
+        if (temp_state == false) {
+            lcd.clear();
+            lcd.setCursor(1,0);
+            lcd.printf("Fuktighet:");
+            lcd.setCursor(0,1);
+            lcd.printf(" %.1f", fuktighet);
+        }
+
+        //Temperatur RGB
+        if ( temperatur < 20 && temp_state == true) {
+            lcd.setColor(BLUE);
+        }
+        if  (temperatur >= 20 && temperatur <= 24 && temp_state == true) {
+            lcd.setRGB(255, 165, 0);
+        } 
+        if  (temperatur > 24 && temp_state == true) {
+            lcd.setColor(RED);
+        } 
+
+        //Fuktighet RGB
+        if  (fuktighet > 0 && temp_state == false) {
+                float fuktighet_meter=2.55*fuktighet;
+                lcd.setRGB(255-fuktighet_meter,255-fuktighet_meter,255);
+            }
+
+        printf("Fuktighet: %.1f  Temperatur: %.1f\n", fuktighet, temperatur);
 }
 
 
