@@ -122,13 +122,12 @@ int main()
         current_minute = time_struct->tm_min;
 
         // Sound the alarm when the current time mathces the alarm time
-        if(alarm_struct.turned_on && alarm_struct.enabled && current_hour == alarm_struct.hour && current_minute == alarm_struct.minute)
+        if(!in_alarm_screen && alarm_struct.turned_on && alarm_struct.enabled && current_hour == alarm_struct.hour && current_minute == alarm_struct.minute)
         {
-            sound_the_alarm();
+            buzzer.write(0.5f);
+            buzzer.period(0.01f);            
             alarm_struct.sounding_alarm = true;
         }
-        else
-            buzzer.write(0.f);
 
         led1 = !led1;
 
@@ -182,6 +181,7 @@ void defaultScreen(char *time_buffer, struct tm *time_struct, struct Alarm &alar
     if(alarm_struct.sounding_alarm && button3.read())
     {
         alarm_struct.sounding_alarm = false;
+        buzzer.write(0.f);
         alarm_struct.enabled = false;
     }
 
@@ -189,6 +189,7 @@ void defaultScreen(char *time_buffer, struct tm *time_struct, struct Alarm &alar
     if(alarm_struct.sounding_alarm && button4.read())
     {
         alarm_struct.sounding_alarm = false;
+        buzzer.write(0.f);
         alarm_struct.minute += 5;
         if(alarm_struct.minute >= 60)
         {
@@ -437,12 +438,4 @@ void newsScreen(const char inputString[], size_t stringSize)
         newsStringBufferEnd = 0;
         return;
     }
-}
-
-
-
-void sound_the_alarm()
-{
-    buzzer.write(0.5f);
-    buzzer.period(0.01f);
 }
