@@ -157,9 +157,15 @@ int main()
         led1 = !led1;
 
         if(button1.read() && buttonMode <= 2 && !in_alarm_screen)
+        {
             buttonMode++;
+            lcd.clear();
+        }
         else if(button1.read() && !in_alarm_screen)
+        {
             buttonMode = 0;
+            lcd.clear();
+        }
 
         switch(buttonMode)
         {
@@ -167,7 +173,10 @@ int main()
                 if(in_alarm_screen && button2.read())
                     alarm_struct.turned_on = true;
                 if(button2.read())
+                {
+                    lcd.clear();
                     in_alarm_screen = !in_alarm_screen;
+                }
 
                 if(!in_alarm_screen)
                     defaultScreen(time_buffer, time_struct, alarm_struct);
@@ -177,7 +186,10 @@ int main()
 
             case 1:
                 if(button2.read())
+                {
                     inTemperatureState = !inTemperatureState;
+                    lcd.clear();
+                }
                 
                 temperatureScreen();
                 break;
@@ -236,7 +248,7 @@ void defaultScreen(char *time_buffer, struct tm *time_struct, struct Alarm &alar
 
     // Different outcomes depending on the alarm state
     // First row is always
-    lcd.clear();
+    
     lcd.setCursor(0, 0);
     lcd.printf("%s", time_buffer);
     lcd.setCursor(0, 1);
@@ -310,9 +322,11 @@ void alarmScreen(struct Alarm &alarm_struct)
     // Disabled means that the alarm will not sound if the clock reaches the alarm time, but the alarm is still active
     // Indicated by "On" or "Off" on the display
     if(button5.read())
+    {
         alarm_struct.enabled = !alarm_struct.enabled;
+        lcd.clear();
+    }
 
-    lcd.clear();
     lcd.setCursor(0, 0);
     if(alarm_struct.hour < 10)
     {
@@ -339,8 +353,6 @@ void alarmScreen(struct Alarm &alarm_struct)
 
 void temperatureScreen()
 {
-    lcd.clear();
-
     if (sensor.init(NULL) != 0) {
         printf("Initialization of device failed\n");
     }
@@ -354,19 +366,17 @@ void temperatureScreen()
        
         if (inTemperatureState)
         {
-            lcd.clear();
-            lcd.setCursor(1,0);
+            lcd.setCursor(0,0);
             lcd.printf("Temperature:");
             lcd.setCursor(0,1);
-            lcd.printf(" %.1f C", temperature);
+            lcd.printf("%.1f C", temperature);
         }
         else if(!inTemperatureState)
         {
-            lcd.clear();
-            lcd.setCursor(1,0);
-            lcd.printf("Fuktighet:");
+            lcd.setCursor(0,0);
+            lcd.printf("Humidity:");
             lcd.setCursor(0,1);
-            lcd.printf(" %.1f C", humidity);
+            lcd.printf("%.1f C", humidity);
         }
 
         //Temperature RGB
@@ -392,7 +402,6 @@ void temperatureScreen()
 
 void weatherScreen()
 {
-    lcd.clear();
     lcd.printf("%s", weatherDesc.c_str());
     lcd.setCursor(0, 1);
     lcd.printf("%.1f C", weatherTemperature);
@@ -410,8 +419,6 @@ void newsScreen(const char inputString[], size_t stringSize)
     static int cursorPos = 15;
     static int newsStringBufferStart = 0;
     static int newsStringBufferEnd = 0;
-
-    lcd.clear();
 
     lcd.setCursor(0, 0);
     lcd.printf("BBC News:");

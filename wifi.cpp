@@ -340,6 +340,8 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
     for (int i = 0; i < 16; i++)
         strcat(pNews->headlineString, " ");
     strcat(pNews->headlineString, thirdString);
+    for (int i = 0; i < 16; i++)
+        strcat(pNews->headlineString, " ");
 } 
 
 
