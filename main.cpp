@@ -107,11 +107,6 @@ int main()
     networkUpdateTIME.join();
     networkUpdateWeather.join();
 
-    // Since the epoch time is UTC/GMT, we need to adjust so it mathces our timezone
-    // We do this by adding 2 hours or 7200 seconds (60 * 60 * 2 = 7200) to the epcoh time
-    set_time(unix_time + 7200);
-
-
     //////Fetching Weather Information///////////
     //data.network = NetworkInterface::get_default_instance();
     //getWeather(data.network, weatherTemperature, weatherDesc);
@@ -127,7 +122,8 @@ int main()
     lcd.init();
     // Will show the epoch time for 5 seconds
     // The last print will print the actual current epoch time by subtracting the offset we added earlier
-    int time_end = unix_time + 7200 + 5;
+    rtc_timer = time(NULL);
+    int time_end = rtc_timer + 5;
     while(rtc_timer < time_end)
     {
         rtc_timer = time(NULL);

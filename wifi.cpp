@@ -442,6 +442,11 @@ void connect_to_WorldTime(NetworkInterface *network, int &unix_time)
 
     parse_json_to_epoch(json_start, unix_time);
 
+    // Since the epoch time is UTC/GMT, we need to adjust so it mathces our timezone
+    // We do this by adding 2 hours or 7200 seconds (60 * 60 * 2 = 7200) to the epcoh time
+    // The time is a bit delayed though
+    set_time(unix_time + 7200);
+
     printf("Unix time: %d\n", unix_time);
 
     network->disconnect();
