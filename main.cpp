@@ -38,6 +38,7 @@ int current_hour = 0;
 int current_minute = 0;
 int alarm_hour = 0;
 int alarm_minute = 0;
+bool alarm_active = false;
 int buttonMode = 0;
 bool inAlarmMode = false;
 bool inTemperatureState = true;
@@ -63,7 +64,7 @@ int main()
     char time_buffer[BUF_LENGTH] = { 0 };
     struct tm *time_struct = nullptr;
 
-
+    printf("%d\n", alarm_active);
 
     if(!network)
     {
@@ -103,6 +104,12 @@ int main()
     {
         rtc_timer = time(NULL);
         time_struct = localtime(&rtc_timer);
+        current_hour = time_struct->tm_hour;
+        current_minute = time_struct->tm_min;
+
+        if(alarm_active && current_hour == alarm_hour && current_minute == alarm_minute)
+            {/*BEEP BOOP*/}
+
 
         led1 = !led1;
 
@@ -114,6 +121,8 @@ int main()
         switch(buttonMode)
         {
             case 0:
+                if(inAlarmMode && button2.read())
+                    alarm_active= true;
                 if(button2.read())
                     inAlarmMode = !inAlarmMode;
 
@@ -149,6 +158,7 @@ int main()
 void defaultScreen(char *time_buffer, struct tm *time_struct)
 {
     strftime(time_buffer, BUF_LENGTH, "%a %d %b %H:%M", time_struct);
+
 
     lcd.clear();
     lcd.setCursor(0, 0);
