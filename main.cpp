@@ -34,22 +34,28 @@ HTS221Sensor sensor(&i2c_device);
 ////GLOBAL BARIABLES////
 int unix_time = 0;
 time_t rtc_timer;
-int current_hour = 0;
-int current_minute = 0;
-int alarm_hour = 0;
-int alarm_minute = 0;
-bool alarm_turned_on = false;
-bool alarm_enabled = true;
 int buttonMode = 0;
-bool inAlarmMode = false;
+bool in_alarm_screen = false;
 bool inTemperatureState = true;
 float humidity;
 float temperature;
+int current_hour = 0;
+int current_minute = 0;
+
+struct Alarm
+{
+    int hour;
+    int minute;
+
+    bool turned_on;
+    bool enabled;
+    bool sounding_alarm;
+};
 
 
 ////STANDARD FUNCTIONS////
-void defaultScreen(char *time_buffer, struct tm *time_struct);
-void alarmScreen();
+void defaultScreen(char *time_buffer, struct tm *time_struct, struct Alarm &alarm_struct);
+void alarmScreen(struct Alarm &alarm_struct);
 void temperatureScreen();
 void weatherScreen();
 void newsScreen(const char string[], size_t stringSize);
@@ -58,12 +64,18 @@ void newsScreen(const char string[], size_t stringSize);
 int main()
 {
     ////STACK/HEAP VARIABLES////
+    struct Alarm alarm_struct;
     struct NewsStrings *pNews = new NewsStrings;
     NetworkInterface *network = NetworkInterface::get_default_instance();
 
     // RTC time that we will use to display current time and etc.
     char time_buffer[BUF_LENGTH] = { 0 };
     struct tm *time_struct = nullptr;
+
+    ////INITIALIZE////
+    alarm_struct.hour = alarm_struct.minute = 0;
+    alarm_struct.turned_on = alarm_struct.sounding_alarm = false;
+    alarm_struct.enabled = true;
 
     if(!network)
     {
@@ -107,30 +119,31 @@ int main()
         current_minute = time_struct->tm_min;
 
         // Sound the alarm when the current time mathces the alarm time
-        if(alarm_turned_on && alarm_enabled && current_hour == alarm_hour && current_minute == alarm_minute)
+        if(alarm_struct.turned_on && alarm_struct.enabled && current_hour == alarm_struct.hour && current_minute == alarm_struct.minute)
         {
+            // Sound the buzzer
             printf("ALARM IS OFF MOTHERCUKER!\n");
         }
 
         led1 = !led1;
 
-        if(button1.read() && buttonMode <= 2 && !inAlarmMode)
+        if(button1.read() && buttonMode <= 2 && !in_alarm_screen)
             buttonMode++;
-        else if(button1.read() && !inAlarmMode)
+        else if(button1.read() && !in_alarm_screen)
             buttonMode = 0;
 
         switch(buttonMode)
         {
             case 0:
-                if(inAlarmMode && button2.read())
-                    alarm_turned_on= true;
+                if(in_alarm_screen && button2.read())
+                    alarm_struct.turned_on = true;
                 if(button2.read())
-                    inAlarmMode = !inAlarmMode;
+                    in_alarm_screen = !in_alarm_screen;
 
-                if(!inAlarmMode)
-                    defaultScreen(time_buffer, time_struct);
+                if(!in_alarm_screen)
+                    defaultScreen(time_buffer, time_struct, alarm_struct);
                 else
-                    alarmScreen();
+                    alarmScreen(alarm_struct);
                 break;
 
             case 1:
@@ -156,16 +169,26 @@ int main()
 
 
 
-void defaultScreen(char *time_buffer, struct tm *time_struct)
+void defaultScreen(char *time_buffer, struct tm *time_struct, struct Alarm &alarm_struct)
 {
     strftime(time_buffer, BUF_LENGTH, "%a %d %b %H:%M", time_struct);
 
+    if(alarm_struct.sounding_alarm && button3.read())
+    {
+
+    }
+
+    if(alarm_struct.sounding_alarm && button4.read())
+    {
+
+    }
+
     if(button5.read())
     {
-        alarm_turned_on = false;
-        alarm_enabled = false;
-        alarm_hour = 0;
-        alarm_minute = 0;
+        alarm_struct.turned_on = false;
+        alarm_struct.enabled = false;
+        alarm_struct.hour = 0;
+        alarm_struct.minute = 0;
     }
 
     // Different outcomes depending on the alarm state
@@ -175,42 +198,42 @@ void defaultScreen(char *time_buffer, struct tm *time_struct)
     lcd.printf("%s", time_buffer);
     lcd.setCursor(0, 1);
     // Active alarm set will show time
-    if(alarm_turned_on)
+    if(alarm_struct.turned_on)
     {
         // Will show only time
-        if(alarm_enabled)
+        if(alarm_struct.enabled)
         {
-            if(alarm_hour < 10)
+            if(alarm_struct.hour < 10)
             {
-                if(alarm_minute < 10)
-                    lcd.printf("Alarm 0%d:0%d", alarm_hour, alarm_minute); 
+                if(alarm_struct.minute < 10)
+                    lcd.printf("Alarm 0%d:0%d", alarm_struct.hour, alarm_struct.minute); 
                 else
-                    lcd.printf("Alarm 0%d:%d", alarm_hour, alarm_minute);
+                    lcd.printf("Alarm 0%d:%d", alarm_struct.hour, alarm_struct.minute);
             }
             else
             {
-                if(alarm_minute < 10)
-                    lcd.printf("Alarm %d:0%d", alarm_hour, alarm_minute);
+                if(alarm_struct.minute < 10)
+                    lcd.printf("Alarm %d:0%d", alarm_struct.hour, alarm_struct.minute);
                 else
-                    lcd.printf("Alarm %d:%d", alarm_hour, alarm_minute);
+                    lcd.printf("Alarm %d:%d", alarm_struct.hour, alarm_struct.minute);
             }
         }
         // Will have the "OFF" text between "Alarm" and time
         else
         {
-            if(alarm_hour < 10)
+            if(alarm_struct.hour < 10)
             {
-                if(alarm_minute < 10)
-                    lcd.printf("Alarm Off 0%d:0%d", alarm_hour, alarm_minute); 
+                if(alarm_struct.minute < 10)
+                    lcd.printf("Alarm Off 0%d:0%d", alarm_struct.hour, alarm_struct.minute); 
                 else
-                    lcd.printf("Alarm Off 0%d:%d", alarm_hour, alarm_minute);
+                    lcd.printf("Alarm Off 0%d:%d", alarm_struct.hour, alarm_struct.minute);
             }
             else
             {
-                if(alarm_minute < 10)
-                    lcd.printf("Alarm Off %d:0%d", alarm_hour, alarm_minute);
+                if(alarm_struct.minute < 10)
+                    lcd.printf("Alarm Off %d:0%d", alarm_struct.hour, alarm_struct.minute);
                 else
-                    lcd.printf("Alarm Off %d:%d", alarm_hour, alarm_minute);
+                    lcd.printf("Alarm Off %d:%d", alarm_struct.hour, alarm_struct.minute);
             }
         }
             
@@ -222,45 +245,45 @@ void defaultScreen(char *time_buffer, struct tm *time_struct)
 
 
 
-void alarmScreen()
+void alarmScreen(struct Alarm &alarm_struct)
 {
     if(button3.read())
     {
-        if(alarm_hour >= 23)
-            alarm_hour = 0;
+        if(alarm_struct.hour >= 23)
+            alarm_struct.hour = 0;
         else
-            alarm_hour++;
+            alarm_struct.hour++;
     }
 
     if(button4.read())
     {
-        if(alarm_minute >= 59)
-            alarm_minute = 0;
+        if(alarm_struct.minute >= 59)
+            alarm_struct.minute = 0;
         else
-            alarm_minute++;
+            alarm_struct.minute++;
     }
 
     if(button5.read())
-        alarm_enabled = !alarm_enabled;
+        alarm_struct.enabled = !alarm_struct.enabled;
 
     lcd.clear();
     lcd.setCursor(0, 0);
-    if(alarm_hour < 10)
+    if(alarm_struct.hour < 10)
     {
-        if(alarm_minute < 10)
-            lcd.printf("Alarm 0%d:0%d", alarm_hour, alarm_minute); 
+        if(alarm_struct.minute < 10)
+            lcd.printf("Alarm 0%d:0%d", alarm_struct.hour, alarm_struct.minute); 
         else
-            lcd.printf("Alarm 0%d:%d", alarm_hour, alarm_minute);
+            lcd.printf("Alarm 0%d:%d", alarm_struct.hour, alarm_struct.minute);
     }
     else
     {
-        if(alarm_minute < 10)
-            lcd.printf("Alarm %d:0%d", alarm_hour, alarm_minute);
+        if(alarm_struct.minute < 10)
+            lcd.printf("Alarm %d:0%d", alarm_struct.hour, alarm_struct.minute);
         else
-            lcd.printf("Alarm %d:%d", alarm_hour, alarm_minute);
+            lcd.printf("Alarm %d:%d", alarm_struct.hour, alarm_struct.minute);
     }
     lcd.setCursor(0, 1);
-    if(alarm_enabled)
+    if(alarm_struct.enabled)
         lcd.printf("On");
     else
         lcd.printf("Off");
