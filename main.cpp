@@ -25,11 +25,12 @@ DigitalIn button3(PD_14, PullDown);
 DigitalIn button4(PA_3, PullDown);
 DigitalIn button5(PA_4, PullDown);
 
+PwmOut buzzer(D9);
+
 DFRobot_RGBLCD lcd(16, 2, D14, D15);
 
 DevI2C i2c_device(PB_11, PB_10);
 HTS221Sensor sensor(&i2c_device);
-
 
 ////GLOBAL BARIABLES////
 int unix_time = 0;
@@ -59,6 +60,7 @@ void alarmScreen(struct Alarm &alarm_struct);
 void temperatureScreen();
 void weatherScreen();
 void newsScreen(const char string[], size_t stringSize);
+void sound_the_alarm();
 
 
 int main()
@@ -121,10 +123,11 @@ int main()
         // Sound the alarm when the current time mathces the alarm time
         if(alarm_struct.turned_on && alarm_struct.enabled && current_hour == alarm_struct.hour && current_minute == alarm_struct.minute)
         {
-            // Sound the buzzer
-            printf("ALARM IS OFF MOTHERCUKER!\n");
+            sound_the_alarm();
             alarm_struct.sounding_alarm = true;
         }
+        else
+            buzzer.write(0.f);
 
         led1 = !led1;
 
@@ -429,4 +432,13 @@ void newsScreen(const char inputString[], size_t stringSize)
         newsStringBufferEnd = 0;
         return;
     }
+}
+
+
+
+void sound_the_alarm()
+{
+    buzzer.write(0.f);
+    buzzer.write(0.5f);
+    buzzer.period(0.01f);
 }
