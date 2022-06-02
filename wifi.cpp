@@ -247,7 +247,8 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
 
     result = send_request(socket, request);
 
-
+    // Only allocate 4000 bytes because we only need the first part of the response
+    // AKA the first three headlines and dont need to give more size to the string
     static constexpr size_t HTTP_RESPONSE_BUF_SIZE = 4000;
     char response[HTTP_RESPONSE_BUF_SIZE] = { 0 };
     int remaining_bytes = HTTP_RESPONSE_BUF_SIZE;

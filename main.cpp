@@ -9,8 +9,9 @@
 #include "TCPSocket.h"
 #include "HTS221Sensor.h"
 
-// Blinking rate in milliseconds
-#define BLINKING_RATE       350ms
+// Define numbers
+#define REFRESH_RATE       100ms
+#define BUF_LENGTH          256
 
 
 ////DEVICES////
@@ -24,27 +25,41 @@ DigitalIn button3(PD_14, PullDown);
 DigitalIn button4(PA_3, PullDown);
 DigitalIn button5(PA_4, PullDown);
 
+PwmOut buzzer(D9);
+
 DFRobot_RGBLCD lcd(16, 2, D14, D15);
 
 DevI2C i2c_device(PB_11, PB_10);
 HTS221Sensor sensor(&i2c_device);
 
-
 ////GLOBAL BARIABLES////
 int unix_time = 0;
+time_t rtc_timer;
 int buttonMode = 0;
-bool inAlarmMode = false;
+bool in_alarm_screen = false;
 bool inTemperatureState = true;
 float humidity;
 float temperature;
 float weatherTemperature;
 std::string weatherDesc;
 
+int current_hour = 0;
+int current_minute = 0;
+
+struct Alarm
+{
+    int hour;
+    int minute;
+
+    bool turned_on;
+    bool enabled;
+    bool sounding_alarm;
+};
 
 
 ////STANDARD FUNCTIONS////
-void defaultScreen();
-void alarmScreen();
+void defaultScreen(char *time_buffer, struct tm *time_struct, struct Alarm &alarm_struct);
+void alarmScreen(struct Alarm &alarm_struct);
 void temperatureScreen();
 void weatherScreen();
 void newsScreen(const char string[], size_t stringSize);
@@ -54,56 +69,94 @@ void getWeather(NetworkInterface *network);
 
 int main()
 {
+    ////STACK/HEAP VARIABLES////
+    struct Alarm alarm_struct;
     struct NewsStrings *pNews = new NewsStrings;
-
     NetworkInterface *network = NetworkInterface::get_default_instance();
+
+    // RTC time that we will use to display current time and etc.
+    char time_buffer[BUF_LENGTH] = { 0 };
+    struct tm *time_struct = nullptr;
+
+    ////INITIALIZE////
+    alarm_struct.hour = alarm_struct.minute = 0;
+    alarm_struct.turned_on = alarm_struct.sounding_alarm = false;
+    alarm_struct.enabled = true;
+    buzzer.write(0.f);
+
     if(!network)
     {
         printf("Failed to get the default network instance\n");
         while(true);
     }
 
-    // Connect to WorldTime to get UNIX epoch time;
-    // WILL BE DONE IN A THREAD LATER
-    connect_to_WorldTime(network, unix_time);
-    
     // Connect to BBCs RSS feed to get news headlines
     // WILL BE DONE IN A THREAD LATER
-    network = NetworkInterface::get_default_instance();
     connect_to_BBC(network, pNews);
-
 
     //////Fetching Weather Information///////////
     network = NetworkInterface::get_default_instance();
     getWeather(network, weatherTemperature, weatherDesc);
 
     // Shows the epoch time for 5 seconds
+    // Connect to WorldTime to get UNIX epoch time;
+    // WILL BE DONE IN A THREAD LATER
+    network = NetworkInterface::get_default_instance();
+    connect_to_WorldTime(network, unix_time);
+
+    // Since the epoch time is UTC/GMT, we need to adjust so it mathces our timezone
+    // We do this by adding 2 hours or 7200 seconds (60 * 60 * 2 = 7200) to the epcoh time
+    set_time(unix_time + 7200);
+
+    // Will show the epoch time for 5 seconds and initialize the display
+    // The last print will print the actual current epoch time by subtracting the offset we added earlier
     lcd.init();
-    lcd.setCursor(0, 0);
-    lcd.printf("UNIX epoch time:");
-    lcd.setCursor(0, 1);
-    lcd.printf("%d", unix_time);
-    ThisThread::sleep_for(5000ms);
+    int time_end = unix_time + 7200 + 5;
+    while(rtc_timer < time_end)
+    {
+        rtc_timer = time(NULL);
+        lcd.setCursor(0, 0);
+        lcd.printf("UNIX epoch time:");
+        lcd.setCursor(0, 1);
+        lcd.printf("%d", rtc_timer - 7200);
+        ThisThread::sleep_for(REFRESH_RATE);
+    }
+    lcd.clear();
 
     while(true)
     {
+        rtc_timer = time(NULL);
+        time_struct = localtime(&rtc_timer);
+        current_hour = time_struct->tm_hour;
+        current_minute = time_struct->tm_min;
+
+        // Sound the alarm when the current time mathces the alarm time
+        if(!in_alarm_screen && alarm_struct.turned_on && alarm_struct.enabled && current_hour == alarm_struct.hour && current_minute == alarm_struct.minute)
+        {
+            buzzer.write(0.5f);
+            buzzer.period(0.01f);            
+            alarm_struct.sounding_alarm = true;
+        }
+
         led1 = !led1;
 
-        if(button1.read() && buttonMode <= 2 && !inAlarmMode)
+        if(button1.read() && buttonMode <= 2 && !in_alarm_screen)
             buttonMode++;
-        else if(button1.read() && !inAlarmMode)
+        else if(button1.read() && !in_alarm_screen)
             buttonMode = 0;
 
         switch(buttonMode)
         {
             case 0:
+                if(in_alarm_screen && button2.read())
+                    alarm_struct.turned_on = true;
                 if(button2.read())
-                    inAlarmMode = !inAlarmMode;
+                    in_alarm_screen = !in_alarm_screen;
 
-                if(!inAlarmMode)
-                    defaultScreen();
+                if(!in_alarm_screen)
+                    defaultScreen(time_buffer, time_struct, alarm_struct);
                 else
-                    alarmScreen();
+                    alarmScreen(alarm_struct);
                 break;
 
             case 1:
@@ -123,24 +176,147 @@ int main()
                 break;
 
         }
-        ThisThread::sleep_for(BLINKING_RATE);
+        ThisThread::sleep_for(REFRESH_RATE);
     }
 }
 
 
 
-void defaultScreen()
+void defaultScreen(char *time_buffer, struct tm *time_struct, struct Alarm &alarm_struct)
 {
+    strftime(time_buffer, BUF_LENGTH, "%a %d %b %H:%M", time_struct);
+
+    // Will turn off the alarm
+    if(alarm_struct.sounding_alarm && button3.read())
+    {
+        alarm_struct.sounding_alarm = false;
+        buzzer.write(0.f);
+        alarm_struct.enabled = false;
+    }
+
+    // Will snooze by adding 5 minutes
+    if(alarm_struct.sounding_alarm && button4.read())
+    {
+        alarm_struct.sounding_alarm = false;
+        buzzer.write(0.f);
+        alarm_struct.minute += 5;
+        if(alarm_struct.minute >= 60)
+        {
+            alarm_struct.minute -= 60;
+
+            alarm_struct.hour++;
+            if(alarm_struct.hour >= 24)
+                alarm_struct.hour = 0;               
+        }
+    }
+
+    // Will delete the current alarm
+    if(button5.read())
+    {
+        alarm_struct.turned_on = false;
+        alarm_struct.hour = 0;
+        alarm_struct.minute = 0;
+    }
+
+    // Different outcomes depending on the alarm state
+    // First row is always
     lcd.clear();
-    lcd.printf("Default!");
+    lcd.setCursor(0, 0);
+    lcd.printf("%s", time_buffer);
+    lcd.setCursor(0, 1);
+    // Active alarm set will show time
+    if(alarm_struct.turned_on)
+    {
+        // Will show only time
+        if(alarm_struct.enabled)
+        {
+            if(alarm_struct.hour < 10)
+            {
+                if(alarm_struct.minute < 10)
+                    lcd.printf("Alarm 0%d:0%d", alarm_struct.hour, alarm_struct.minute); 
+                else
+                    lcd.printf("Alarm 0%d:%d", alarm_struct.hour, alarm_struct.minute);
+            }
+            else
+            {
+                if(alarm_struct.minute < 10)
+                    lcd.printf("Alarm %d:0%d", alarm_struct.hour, alarm_struct.minute);
+                else
+                    lcd.printf("Alarm %d:%d", alarm_struct.hour, alarm_struct.minute);
+            }
+        }
+        // Will have the "OFF" text between "Alarm" and time
+        else
+        {
+            if(alarm_struct.hour < 10)
+            {
+                if(alarm_struct.minute < 10)
+                    lcd.printf("Alarm Off 0%d:0%d", alarm_struct.hour, alarm_struct.minute); 
+                else
+                    lcd.printf("Alarm Off 0%d:%d", alarm_struct.hour, alarm_struct.minute);
+            }
+            else
+            {
+                if(alarm_struct.minute < 10)
+                    lcd.printf("Alarm Off %d:0%d", alarm_struct.hour, alarm_struct.minute);
+                else
+                    lcd.printf("Alarm Off %d:%d", alarm_struct.hour, alarm_struct.minute);
+            }
+        }
+            
+    }
+    // Will only show "Alarm" on the screen since there isn't any alarm enabled
+    else
+        lcd.printf("Alarm");
 }
 
 
 
-void alarmScreen()
+void alarmScreen(struct Alarm &alarm_struct)
 {
+    // Will add one hour to the alarm
+    if(button3.read())
+    {
+        alarm_struct.hour++;
+        if(alarm_struct.hour >= 24)
+            alarm_struct.hour = 0;
+    }
+
+    // Will add one minute to the alarm
+    if(button4.read())
+    {
+        alarm_struct.minute++;
+        if(alarm_struct.minute >= 60)
+            alarm_struct.minute = 0;
+    }
+
+    // Will enable/disable the alarm
+    // Disabled means that the alarm will not sound if the clock reaches the alarm time, but the alarm is still active
+    // Indicated by "On" or "Off" on the display
+    if(button5.read())
+        alarm_struct.enabled = !alarm_struct.enabled;
+
     lcd.clear();
-    lcd.printf("Alarm!");
+    lcd.setCursor(0, 0);
+    if(alarm_struct.hour < 10)
+    {
+        if(alarm_struct.minute < 10)
+            lcd.printf("Alarm 0%d:0%d", alarm_struct.hour, alarm_struct.minute); 
+        else
+            lcd.printf("Alarm 0%d:%d", alarm_struct.hour, alarm_struct.minute);
+    }
+    else
+    {
+        if(alarm_struct.minute < 10)
+            lcd.printf("Alarm %d:0%d", alarm_struct.hour, alarm_struct.minute);
+        else
+            lcd.printf("Alarm %d:%d", alarm_struct.hour, alarm_struct.minute);
+    }
+    lcd.setCursor(0, 1);
+    if(alarm_struct.enabled)
+        lcd.printf("On");
+    else
+        lcd.printf("Off");
 }
 
 
@@ -174,7 +350,7 @@ void temperatureScreen()
             lcd.setCursor(1,0);
             lcd.printf("Fuktighet:");
             lcd.setCursor(0,1);
-            lcd.printf(" %.1f %%", humidity);
+            lcd.printf(" %.1f%%", humidity);
         }
 
         //Temperature RGB
@@ -269,12 +445,4 @@ void newsScreen(const char inputString[], size_t stringSize)
         return;
     }
 }
-
-
-
-
-
-
-
-
 
