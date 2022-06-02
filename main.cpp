@@ -40,6 +40,9 @@ bool in_alarm_screen = false;
 bool inTemperatureState = true;
 float humidity;
 float temperature;
+float weatherTemperature;
+std::string weatherDesc;
+
 int current_hour = 0;
 int current_minute = 0;
 
@@ -60,6 +63,8 @@ void alarmScreen(struct Alarm &alarm_struct);
 void temperatureScreen();
 void weatherScreen();
 void newsScreen(const char string[], size_t stringSize);
+void getWeather(NetworkInterface *network);
+
 
 
 int main()
@@ -89,6 +94,11 @@ int main()
     // WILL BE DONE IN A THREAD LATER
     connect_to_BBC(network, pNews);
 
+    //////Fetching Weather Information///////////
+    network = NetworkInterface::get_default_instance();
+    getWeather(network, weatherTemperature, weatherDesc);
+
+    // Shows the epoch time for 5 seconds
     // Connect to WorldTime to get UNIX epoch time;
     // WILL BE DONE IN A THREAD LATER
     network = NetworkInterface::get_default_instance();
@@ -223,16 +233,16 @@ void defaultScreen(char *time_buffer, struct tm *time_struct, struct Alarm &alar
             if(alarm_struct.hour < 10)
             {
                 if(alarm_struct.minute < 10)
-                    lcd.printf("Alarm 0%d:0%d", alarm_struct.hour, alarm_struct.minute); 
+                    lcd.printf("Alarm     0%d:0%d", alarm_struct.hour, alarm_struct.minute); 
                 else
-                    lcd.printf("Alarm 0%d:%d", alarm_struct.hour, alarm_struct.minute);
+                    lcd.printf("Alarm     0%d:%d", alarm_struct.hour, alarm_struct.minute);
             }
             else
             {
                 if(alarm_struct.minute < 10)
-                    lcd.printf("Alarm %d:0%d", alarm_struct.hour, alarm_struct.minute);
+                    lcd.printf("Alarm     %d:0%d", alarm_struct.hour, alarm_struct.minute);
                 else
-                    lcd.printf("Alarm %d:%d", alarm_struct.hour, alarm_struct.minute);
+                    lcd.printf("Alarm     %d:%d", alarm_struct.hour, alarm_struct.minute);
             }
         }
         // Will have the "OFF" text between "Alarm" and time
@@ -340,7 +350,7 @@ void temperatureScreen()
             lcd.setCursor(1,0);
             lcd.printf("Fuktighet:");
             lcd.setCursor(0,1);
-            lcd.printf(" %.1f%%", humidity);
+            lcd.printf(" %.1f C", humidity);
         }
 
         //Temperature RGB
@@ -367,7 +377,10 @@ void temperatureScreen()
 void weatherScreen()
 {
     lcd.clear();
-    lcd.printf("Weather!");
+    lcd.printf("%s", weatherDesc.c_str());
+    lcd.setCursor(0, 1);
+    lcd.printf("%.1f C", weatherTemperature);
+    lcd.setCursor(0, 0);
 }
 
 
@@ -432,3 +445,4 @@ void newsScreen(const char inputString[], size_t stringSize)
         return;
     }
 }
+
