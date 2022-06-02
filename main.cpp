@@ -78,6 +78,7 @@ int main()
     alarm_struct.hour = alarm_struct.minute = 0;
     alarm_struct.turned_on = alarm_struct.sounding_alarm = false;
     alarm_struct.enabled = true;
+    buzzer.write(0.f);
 
     if(!network)
     {
@@ -276,7 +277,12 @@ void alarmScreen(struct Alarm &alarm_struct)
     if(button4.read())
     {
         if(alarm_struct.minute >= 59)
+        {
             alarm_struct.minute = 0;
+            alarm_struct.hour++;
+            if(alarm_struct.hour >= 24)
+                alarm_struct.hour = 0;
+        }
         else
             alarm_struct.minute++;
     }
@@ -438,7 +444,6 @@ void newsScreen(const char inputString[], size_t stringSize)
 
 void sound_the_alarm()
 {
-    buzzer.write(0.f);
     buzzer.write(0.5f);
     buzzer.period(0.01f);
 }
