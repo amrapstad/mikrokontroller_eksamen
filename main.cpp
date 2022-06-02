@@ -146,7 +146,7 @@ int main()
         if(!in_alarm_screen && alarm_struct.turned_on && alarm_struct.enabled && current_hour == alarm_struct.hour && current_minute == alarm_struct.minute)
         {
             buzzer.write(0.5f);
-            buzzer.period(0.01f);            
+            buzzer.period(0.005f);            
             alarm_struct.sounding_alarm = true;
         }
 
