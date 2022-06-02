@@ -10,8 +10,8 @@ Weather Forecast: https://api.weatherapi.com/v1/current.json?q=auto:ip&key=f2b50
 For wifi connection we are using "student-FoU" with password "stud2018" at campus
 
 Button from right to left:
-    Button 1: Change to the next screen
-    Button 2: Change from/to default screen and alarm screen OR change from/to temperature screen and humidity screen
-    Button 3: Stop the alarm OR increase hours in alarm
-    Button 4: Snooze the alarm OR increase minutes in alarm
-    Button 5: Delete the current alarm permanently OR turn the alarm functionality on or off
+Button 1: Change to the next screen
+Button 2: Change from/to default screen and alarm screen OR change from/to temperature screen and humidity screen
+Button 3: Stop the alarm OR increase hours in alarm
+Button 4: Snooze the alarm OR increase minutes in alarm
+Button 5: Delete the current alarm permanently OR turn the alarm functionality on or off
