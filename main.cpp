@@ -267,10 +267,9 @@ void alarmScreen(struct Alarm &alarm_struct)
     // Will add one hour to the alarm
     if(button3.read())
     {
-        if(alarm_struct.hour >= 23)
+        alarm_struct.hour++;
+        if(alarm_struct.hour >= 24)
             alarm_struct.hour = 0;
-        else
-            alarm_struct.hour++;
     }
 
     // Will add one minute to the alarm
