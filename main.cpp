@@ -3,6 +3,7 @@
 #include "nsapi_types.h"
 #include "wifi.h"
 #include <string.h>
+#include <string>
 #include "BufferedSerial.h"
 #include "NetworkInterface.h"
 #include "SocketAddress.h"
@@ -32,20 +33,6 @@ DFRobot_RGBLCD lcd(16, 2, D14, D15);
 DevI2C i2c_device(PB_11, PB_10);
 HTS221Sensor sensor(&i2c_device);
 
-////GLOBAL BARIABLES////
-int unix_time = 0;
-time_t rtc_timer;
-int buttonMode = 0;
-bool in_alarm_screen = false;
-bool inTemperatureState = true;
-float humidity;
-float temperature;
-float weatherTemperature;
-std::string weatherDesc;
-
-int current_hour = 0;
-int current_minute = 0;
-
 struct Alarm
 {
     int hour;
@@ -57,6 +44,31 @@ struct Alarm
 };
 
 
+////GLOBAL BARIABLES////
+int unix_time = 0;
+time_t rtc_timer;
+int buttonMode = 0;
+bool in_alarm_screen = false;
+bool inTemperatureState = true;
+int current_hour = 0;
+int current_minute = 0;
+float humidity;
+float temperature;
+float weatherTemperature;
+std::string weatherDesc;
+NetworkInterface *network;
+
+////STRUCTS////
+struct NewsStrings pNews; //= new NewsStrings;
+
+//////Threads////////////
+Thread networkUpdateBBC;
+Thread networkUpdateTIME;
+Thread networkUpdateWeather;
+Mutex mutex;
+
+
+
 ////STANDARD FUNCTIONS////
 void defaultScreen(char *time_buffer, struct tm *time_struct, struct Alarm &alarm_struct);
 void alarmScreen(struct Alarm &alarm_struct);
@@ -66,13 +78,16 @@ void newsScreen(const char string[], size_t stringSize);
 void getWeather(NetworkInterface *network);
 
 
+////THREADS////
+void thread1();         // BBC
+void thread2();         // Epoch time
+void thread3();         // Weather forecast
+
 
 int main()
 {
     ////STACK/HEAP VARIABLES////
     struct Alarm alarm_struct;
-    struct NewsStrings *pNews = new NewsStrings;
-    NetworkInterface *network = NetworkInterface::get_default_instance();
 
     // RTC time that we will use to display current time and etc.
     char time_buffer[BUF_LENGTH] = { 0 };
@@ -83,34 +98,35 @@ int main()
     alarm_struct.turned_on = alarm_struct.sounding_alarm = false;
     alarm_struct.enabled = true;
     buzzer.write(0.f);
+    
+    networkUpdateBBC.start(callback(thread1));
+    networkUpdateTIME.start(callback(thread2));
+    networkUpdateWeather.start(callback(thread3));
 
-    if(!network)
-    {
-        printf("Failed to get the default network instance\n");
-        while(true);
-    }
-
-    // Connect to BBCs RSS feed to get news headlines
-    // WILL BE DONE IN A THREAD LATER
-    connect_to_BBC(network, pNews);
-
-    //////Fetching Weather Information///////////
-    network = NetworkInterface::get_default_instance();
-    getWeather(network, weatherTemperature, weatherDesc);
-
-    // Shows the epoch time for 5 seconds
-    // Connect to WorldTime to get UNIX epoch time;
-    // WILL BE DONE IN A THREAD LATER
-    network = NetworkInterface::get_default_instance();
-    connect_to_WorldTime(network, unix_time);
+    networkUpdateBBC.join();
+    networkUpdateTIME.join();
+    networkUpdateWeather.join();
 
     // Since the epoch time is UTC/GMT, we need to adjust so it mathces our timezone
     // We do this by adding 2 hours or 7200 seconds (60 * 60 * 2 = 7200) to the epcoh time
     set_time(unix_time + 7200);
 
-    // Will show the epoch time for 5 seconds and initialize the display
-    // The last print will print the actual current epoch time by subtracting the offset we added earlier
+
+    //////Fetching Weather Information///////////
+    //data.network = NetworkInterface::get_default_instance();
+    //getWeather(data.network, weatherTemperature, weatherDesc);
+
+    // Shows the epoch time for 5 seconds
+    // Connect to WorldTime to get UNIX epoch time;
+    // WILL BE DONE IN A THREAD LATER
+    //data.network = NetworkInterface::get_default_instance();
+    //connect_to_WorldTime(data.network, unix_time);
+
+
+    // Initialize lcd display
     lcd.init();
+    // Will show the epoch time for 5 seconds
+    // The last print will print the actual current epoch time by subtracting the offset we added earlier
     int time_end = unix_time + 7200 + 5;
     while(rtc_timer < time_end)
     {
@@ -172,7 +188,7 @@ int main()
                 break;
 
             case 3:
-                newsScreen(pNews->headlineString, strlen(pNews->headlineString));
+                newsScreen(pNews.headlineString, strlen(pNews.headlineString));
                 break;
 
         }
@@ -444,5 +460,29 @@ void newsScreen(const char inputString[], size_t stringSize)
         newsStringBufferEnd = 0;
         return;
     }
+}
+
+// Thread to gather BBC news
+void thread1()
+{
+    mutex.lock();
+    connect_to_BBC(network, &pNews);
+    mutex.unlock();
+}
+
+// Thread to gather UNIX epoch time
+void thread2()
+{
+    mutex.lock();
+    connect_to_WorldTime(network, unix_time);
+    mutex.unlock();
+}
+
+// Thread to gather weather forecast
+void thread3()
+{
+    mutex.lock();
+    getWeather(network, weatherTemperature, weatherDesc);
+    mutex.unlock();
 }
 
