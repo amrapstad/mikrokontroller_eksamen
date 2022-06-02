@@ -123,6 +123,7 @@ int main()
         {
             // Sound the buzzer
             printf("ALARM IS OFF MOTHERCUKER!\n");
+            alarm_struct.sounding_alarm = true;
         }
 
         led1 = !led1;
@@ -173,20 +174,32 @@ void defaultScreen(char *time_buffer, struct tm *time_struct, struct Alarm &alar
 {
     strftime(time_buffer, BUF_LENGTH, "%a %d %b %H:%M", time_struct);
 
+    // Will turn off the alarm
     if(alarm_struct.sounding_alarm && button3.read())
     {
-
+        alarm_struct.sounding_alarm = false;
+        alarm_struct.enabled = false;
     }
 
+    // Will snooze by adding 5 minutes
     if(alarm_struct.sounding_alarm && button4.read())
     {
+        alarm_struct.sounding_alarm = false;
+        alarm_struct.minute += 5;
+        if(alarm_struct.minute >= 60)
+        {
+            alarm_struct.minute -= 60;
 
+            alarm_struct.hour++;
+            if(alarm_struct.hour >= 24)
+                alarm_struct.hour = 0;               
+        }
     }
 
+    // Will delete the current alarm
     if(button5.read())
     {
         alarm_struct.turned_on = false;
-        alarm_struct.enabled = false;
         alarm_struct.hour = 0;
         alarm_struct.minute = 0;
     }
@@ -247,6 +260,7 @@ void defaultScreen(char *time_buffer, struct tm *time_struct, struct Alarm &alar
 
 void alarmScreen(struct Alarm &alarm_struct)
 {
+    // Will add one hour to the alarm
     if(button3.read())
     {
         if(alarm_struct.hour >= 23)
@@ -255,6 +269,7 @@ void alarmScreen(struct Alarm &alarm_struct)
             alarm_struct.hour++;
     }
 
+    // Will add one minute to the alarm
     if(button4.read())
     {
         if(alarm_struct.minute >= 59)
@@ -263,6 +278,9 @@ void alarmScreen(struct Alarm &alarm_struct)
             alarm_struct.minute++;
     }
 
+    // Will enable/disable the alarm
+    // Disabled means that the alarm will not sound if the clock reaches the alarm time, but the alarm is still active
+    // Indicated by "On" or "Off" on the display
     if(button5.read())
         alarm_struct.enabled = !alarm_struct.enabled;
 
