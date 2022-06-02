@@ -239,6 +239,8 @@ void defaultScreen(char *time_buffer, struct tm *time_struct, struct Alarm &alar
     {
         lcd.clear();
         alarm_struct.turned_on = false;
+        alarm_struct.sounding_alarm = false;
+        buzzer.write(0.f);
         alarm_struct.hour = 0;
         alarm_struct.minute = 0;
     }
