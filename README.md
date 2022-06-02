@@ -11,6 +11,8 @@ Weather Forecast: https://api.weatherapi.com/v1/current.json?q=auto:ip&key=f2b50
 
 For wifi connection we are using "student-FoU" with password "stud2018" at campus
 
+It is recommended to use headphones while watching the video of the exam
+
 Button from right to left:
 
 Button 1: Change to the next screen
