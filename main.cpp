@@ -3,6 +3,7 @@
 #include "nsapi_types.h"
 #include "wifi.h"
 #include <string.h>
+#include <string>
 #include "BufferedSerial.h"
 #include "NetworkInterface.h"
 #include "SocketAddress.h"
@@ -32,20 +33,6 @@ DFRobot_RGBLCD lcd(16, 2, D14, D15);
 DevI2C i2c_device(PB_11, PB_10);
 HTS221Sensor sensor(&i2c_device);
 
-////GLOBAL BARIABLES////
-int unix_time = 0;
-time_t rtc_timer;
-int buttonMode = 0;
-bool in_alarm_screen = false;
-bool inTemperatureState = true;
-float humidity;
-float temperature;
-float weatherTemperature;
-std::string weatherDesc;
-
-int current_hour = 0;
-int current_minute = 0;
-
 struct Alarm
 {
     int hour;
@@ -56,6 +43,28 @@ struct Alarm
     bool sounding_alarm;
 };
 
+struct Data
+{
+    struct NewsStrings *pNews = new NewsStrings;
+    NetworkInterface *network = NetworkInterface::get_default_instance();
+};
+
+////GLOBAL BARIABLES////
+int unix_time = 0;
+time_t rtc_timer;
+int buttonMode = 0;
+bool in_alarm_screen = false;
+bool inTemperatureState = true;
+float humidity;
+float temperature;
+float weatherTemperature;
+std::string weatherDesc;
+Data data;
+
+int current_hour = 0;
+int current_minute = 0;
+
+
 
 ////STANDARD FUNCTIONS////
 void defaultScreen(char *time_buffer, struct tm *time_struct, struct Alarm &alarm_struct);
@@ -64,6 +73,9 @@ void temperatureScreen();
 void weatherScreen();
 void newsScreen(const char string[], size_t stringSize);
 void getWeather(NetworkInterface *network);
+void thread1(Data *data);
+void thread2(Data *data);
+void thread3(Data *data);
 
 
 
@@ -71,8 +83,6 @@ int main()
 {
     ////STACK/HEAP VARIABLES////
     struct Alarm alarm_struct;
-    struct NewsStrings *pNews = new NewsStrings;
-    NetworkInterface *network = NetworkInterface::get_default_instance();
 
     // RTC time that we will use to display current time and etc.
     char time_buffer[BUF_LENGTH] = { 0 };
@@ -84,25 +94,33 @@ int main()
     alarm_struct.enabled = true;
     buzzer.write(0.f);
 
-    if(!network)
+    if(!data.network)
     {
         printf("Failed to get the default network instance\n");
         while(true);
     }
+    
+    
+    //////Threads////////////
+    //Thread networkUpdateBBC;
+    //Thread networkUpdateTIME;
+    Thread networkUpdateWeather;
+    //networkUpdateBBC.start(callback(thread1, &data));
+    //networkUpdateTIME.start(callback(thread2, &data));
+    networkUpdateWeather.start(callback(thread3, &data));
 
-    // Connect to BBCs RSS feed to get news headlines
-    // WILL BE DONE IN A THREAD LATER
-    connect_to_BBC(network, pNews);
+
+
 
     //////Fetching Weather Information///////////
-    network = NetworkInterface::get_default_instance();
-    getWeather(network, weatherTemperature, weatherDesc);
+    //data.network = NetworkInterface::get_default_instance();
+    //getWeather(data.network, weatherTemperature, weatherDesc);
 
     // Shows the epoch time for 5 seconds
     // Connect to WorldTime to get UNIX epoch time;
     // WILL BE DONE IN A THREAD LATER
-    network = NetworkInterface::get_default_instance();
-    connect_to_WorldTime(network, unix_time);
+    //data.network = NetworkInterface::get_default_instance();
+    //connect_to_WorldTime(data.network, unix_time);
 
     // Since the epoch time is UTC/GMT, we need to adjust so it mathces our timezone
     // We do this by adding 2 hours or 7200 seconds (60 * 60 * 2 = 7200) to the epcoh time
@@ -172,7 +190,7 @@ int main()
                 break;
 
             case 3:
-                newsScreen(pNews->headlineString, strlen(pNews->headlineString));
+                newsScreen(data.pNews->headlineString, strlen(data.pNews->headlineString));
                 break;
 
         }
@@ -443,6 +461,41 @@ void newsScreen(const char inputString[], size_t stringSize)
         newsStringBufferStart = 0;
         newsStringBufferEnd = 0;
         return;
+    }
+}
+
+
+
+
+
+void thread1(Data *data)
+{
+    while(true)
+    {
+        // Connect to BBCs RSS feed to get news headlines
+        // WILL BE DONE IN A THREAD LATER
+        //connect_to_BBC(data->network, data->pNews);
+        //testFunction();
+        ThisThread::sleep_for(1000000ms);
+    }
+}
+
+
+void thread2(Data *data)
+{
+    while(true)
+    {
+        ThisThread::sleep_for(60000ms);
+    }
+}
+
+
+void thread3(Data *data)
+{
+    while(true)
+    {
+        getWeather(data->network, weatherTemperature, weatherDesc);
+        ThisThread::sleep_for(120000ms);
     }
 }
 

@@ -26,6 +26,7 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *strings);
 void connect_to_WorldTime(NetworkInterface *network, int &unix_time);
 void getLocation(NetworkInterface *network, std::string &latitude, std::string &longitude);
 void getWeather(NetworkInterface *network, float &temperature, std::string &weatherDesc);
+void testFunction();
 
 //void connect_to_IpGeo();
 

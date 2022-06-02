@@ -177,6 +177,9 @@ void parse_json_to_epoch(char *input, int &unix_time)
 
 
 
+void testFunction() {
+    printf("Hello World\n");
+}
 
 
 
@@ -257,12 +260,6 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
     int received_bytes = 0;
 
     result = read_response(socket, response, HTTP_RESPONSE_BUF_SIZE);
-    socket->close();
-
-    delete socket;
-    socket = nullptr;
-
-    network->disconnect();
 
 
     if(result < 0)
