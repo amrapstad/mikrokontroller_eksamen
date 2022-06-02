@@ -10,8 +10,8 @@
 #include "TCPSocket.h"
 #include "HTS221Sensor.h"
 
-// Define numbers
-#define REFRESH_RATE       100ms
+// Define how often everything will refresh
+#define REFRESH_RATE       50ms
 #define BUF_LENGTH          256
 
 
@@ -237,6 +237,7 @@ void defaultScreen(char *time_buffer, struct tm *time_struct, struct Alarm &alar
     // Will delete the current alarm
     if(button5.read())
     {
+        lcd.clear();
         alarm_struct.turned_on = false;
         alarm_struct.hour = 0;
         alarm_struct.minute = 0;
@@ -372,7 +373,7 @@ void temperatureScreen()
             lcd.setCursor(0,0);
             lcd.printf("Humidity:");
             lcd.setCursor(0,1);
-            lcd.printf("%.1f C", humidity);
+            lcd.printf("%.1f%%", humidity);
         }
 
         //Temperature RGB
