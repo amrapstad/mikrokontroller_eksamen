@@ -37,6 +37,9 @@ bool inAlarmMode = false;
 bool inTemperatureState = true;
 float humidity;
 float temperature;
+float weatherTemperature;
+std::string weatherDesc;
+
 
 
 ////STANDARD FUNCTIONS////
@@ -45,6 +48,8 @@ void alarmScreen();
 void temperatureScreen();
 void weatherScreen();
 void newsScreen(const char string[], size_t stringSize);
+void getWeather(NetworkInterface *network);
+
 
 
 int main()
@@ -66,6 +71,11 @@ int main()
     // WILL BE DONE IN A THREAD LATER
     network = NetworkInterface::get_default_instance();
     connect_to_BBC(network, pNews);
+
+
+    //////Fetching Weather Information///////////
+    network = NetworkInterface::get_default_instance();
+    getWeather(network, weatherTemperature, weatherDesc);
 
     // Shows the epoch time for 5 seconds
     lcd.init();
@@ -191,7 +201,10 @@ void temperatureScreen()
 void weatherScreen()
 {
     lcd.clear();
-    lcd.printf("Weather!");
+    lcd.printf("%s", weatherDesc.c_str());
+    lcd.setCursor(0, 1);
+    lcd.printf("%.1f", weatherTemperature);
+    lcd.setCursor(0, 0);
 }
 
 
@@ -256,3 +269,12 @@ void newsScreen(const char inputString[], size_t stringSize)
         return;
     }
 }
+
+
+
+
+
+
+
+
+

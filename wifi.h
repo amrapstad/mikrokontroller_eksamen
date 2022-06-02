@@ -3,6 +3,9 @@
 
 #include "mbed.h"
 #include "json.hpp"
+#include "ipgeolocation_certificate.h"
+#include "weatherapi_cert.h"
+#define BLINKING_RATE1       10000ms
 
 using json = nlohmann::json;
 
@@ -21,6 +24,8 @@ const char *get_nsapi_error_string(nsapi_error_t err);
 void parse_json_to_epoch(char *input, int &unix_time);
 void connect_to_BBC(NetworkInterface *network, struct NewsStrings *strings);
 void connect_to_WorldTime(NetworkInterface *network, int &unix_time);
+void getLocation(NetworkInterface *network, std::string &latitude, std::string &longitude);
+void getWeather(NetworkInterface *network, float &temperature, std::string &weatherDesc);
 
 //void connect_to_IpGeo();
 
