@@ -188,9 +188,11 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
     /*---News Feed Get Request---*/
     nsapi_size_or_error_t result;
 
+          printf("Gathering News Information..\n");
+
     do
     {
-        printf("\nConnecting to network for BBC...\n");
+        printf("\nConnecting to the local network...\n");
         result = network->connect();
 
         if(result != 0)
@@ -344,9 +346,12 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
 void connect_to_WorldTime(NetworkInterface *network, int &unix_time)
 {
     nsapi_size_or_error_t result;
+
+      printf("Gathering Time Information..\n");
+
     do
     {
-        printf("\nConnecting to network for World Time...\n");
+        printf("\nConnecting to local network...\n");
         result = network->connect();
 
         if(result != 0)
@@ -437,8 +442,10 @@ void getWeather(NetworkInterface *network, float &weatherTemperature, std::strin
 
   nsapi_size_or_error_t result;
 
+    printf("Gathering Weather Information..\n");
+
   do {
-    printf("Connecting to the OPENWEATHER network...\n");
+    printf("Connecting to the local network...\n");
     result = network->connect();
 
     if (result != NSAPI_ERROR_OK) {

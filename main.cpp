@@ -233,16 +233,16 @@ void defaultScreen(char *time_buffer, struct tm *time_struct, struct Alarm &alar
             if(alarm_struct.hour < 10)
             {
                 if(alarm_struct.minute < 10)
-                    lcd.printf("Alarm 0%d:0%d", alarm_struct.hour, alarm_struct.minute); 
+                    lcd.printf("Alarm     0%d:0%d", alarm_struct.hour, alarm_struct.minute); 
                 else
-                    lcd.printf("Alarm 0%d:%d", alarm_struct.hour, alarm_struct.minute);
+                    lcd.printf("Alarm     0%d:%d", alarm_struct.hour, alarm_struct.minute);
             }
             else
             {
                 if(alarm_struct.minute < 10)
-                    lcd.printf("Alarm %d:0%d", alarm_struct.hour, alarm_struct.minute);
+                    lcd.printf("Alarm     %d:0%d", alarm_struct.hour, alarm_struct.minute);
                 else
-                    lcd.printf("Alarm %d:%d", alarm_struct.hour, alarm_struct.minute);
+                    lcd.printf("Alarm     %d:%d", alarm_struct.hour, alarm_struct.minute);
             }
         }
         // Will have the "OFF" text between "Alarm" and time
@@ -350,7 +350,7 @@ void temperatureScreen()
             lcd.setCursor(1,0);
             lcd.printf("Fuktighet:");
             lcd.setCursor(0,1);
-            lcd.printf(" %.1f%%", humidity);
+            lcd.printf(" %.1f C", humidity);
         }
 
         //Temperature RGB
@@ -379,7 +379,7 @@ void weatherScreen()
     lcd.clear();
     lcd.printf("%s", weatherDesc.c_str());
     lcd.setCursor(0, 1);
-    lcd.printf("%.1f", weatherTemperature);
+    lcd.printf("%.1f C", weatherTemperature);
     lcd.setCursor(0, 0);
 }
 
