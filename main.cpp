@@ -34,8 +34,10 @@ HTS221Sensor sensor(&i2c_device);
 ////GLOBAL BARIABLES////
 int unix_time = 0;
 time_t rtc_timer;
-int alarm_hours = 0;
-int alarm_minutes = 0;
+int current_hour = 0;
+int current_minute = 0;
+int alarm_hour = 0;
+int alarm_minute = 0;
 int buttonMode = 0;
 bool inAlarmMode = false;
 bool inTemperatureState = true;
@@ -161,35 +163,35 @@ void alarmScreen()
 {
     if(button3.read())
     {
-        if(alarm_hours >= 23)
-            alarm_hours = 0;
+        if(alarm_hour >= 23)
+            alarm_hour = 0;
         else
-            alarm_hours++;
+            alarm_hour++;
     }
 
     if(button4.read())
     {
-        if(alarm_minutes >= 59)
-            alarm_minutes = 0;
+        if(alarm_minute >= 59)
+            alarm_minute = 0;
         else
-            alarm_minutes++;
+            alarm_minute++;
     }
 
     lcd.clear();
     lcd.setCursor(0, 0);
-    if(alarm_hours < 10)
+    if(alarm_hour < 10)
     {
-        if(alarm_minutes < 10)
-            lcd.printf("Alarm 0%d:0%d", alarm_hours, alarm_minutes); 
+        if(alarm_minute < 10)
+            lcd.printf("Alarm 0%d:0%d", alarm_hour, alarm_minute); 
         else
-            lcd.printf("Alarm 0%d:%d", alarm_hours, alarm_minutes);
+            lcd.printf("Alarm 0%d:%d", alarm_hour, alarm_minute);
     }
     else
     {
-        if(alarm_minutes < 10)
-            lcd.printf("Alarm %d:0%d", alarm_hours, alarm_minutes);
+        if(alarm_minute < 10)
+            lcd.printf("Alarm %d:0%d", alarm_hour, alarm_minute);
         else
-            lcd.printf("Alarm %d:%d", alarm_hours, alarm_minutes);
+            lcd.printf("Alarm %d:%d", alarm_hour, alarm_minute);
     }
 }
 
