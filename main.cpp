@@ -1,6 +1,13 @@
 #include "mbed.h"
 #include "DFRobot_RGBLCD.h"
 #include "HTS221Sensor.h"
+#include <chrono>
+#include <ctime>
+#include <ratio>
+#include <cstdint>
+#include "Timer.h"
+#include "beep.h"
+
 //#include "ipgeolocation.h"
 #define BLINKING_RATE 1000ms
 #define SLEEP_TIME 3000ms
@@ -237,13 +244,69 @@ int main()
     printf("IP from JSON data: %s\n", ip.c_str());
   }
     ////////////////////////////////////////////////END NETWORK/////////////////////////////////////////////////////////////////
+    
+    ////////////////////////////////////////////////START ALARM/////////////////////////////////////////////////////////////////
+    constexpr uint32_t
+    watchdogTimeoutMS = 10000;
+    
+    Watchdog &Watchdog = 
+    Watchdog::get_instance();
+    
+    Timer t;
+    
+    uint64_t timePassed;
 
+    void setAlarm() {
+        LED1 = !LED1;
+        isPaused = !isPaused
 
+        if(isPaused) {
+            t.stop();
+        }
+        else {
+            t.start();
+        }
+    }
+
+    void buzzer() {
+        
+        play("g", "Q");
+        play("d", "E");
+        play("g", "Q");
+        play("d", "E");
+        play("g", "Q");
+        play("d", "E");
+    }
+
+    void play (char* note, char* length) {
+        
+        if (note=="g") {
+        buzzer.beepFreq(1568);
+        }
+
+        if (note=="d") {
+        buzzer.beepFreq(1175);
+        }
+
+        if (length=="Q"){ //quarter note
+        buzzer.beepTime(0.5);
+        wait_us(500000);
+        }
+
+        if (length=="E"){ // eighth note
+        buzzer.beepTime(0.25);
+        wait_us(250000);
+        }
+        
+
+    }
+
+////////////////////////////////////////////////END ALARM/////////////////////////////////////////////////////////////////
 
     while(true)
     {
         led1 = !led1;
-
+        
         if(button1.read() && buttonMode <= 2 && !inAlarmMode)
             buttonMode++;
         else if(button1.read() && !inAlarmMode)
@@ -287,9 +350,21 @@ void defaultScreen()
 }
 
 void alarmScreen()
-{
-    lcd.clear();
-    lcd.printf("Alarm!");
+    {
+        lcd.clear();
+        lcd.printf("Alarm!");
+    
+    while (true) {
+        if(setAlarm <= 0) {
+            
+            t.stop();
+            setAlarm = button2.read();
+
+            buzzer();
+        }
+
+    }
+
 }
 
 void temperatureScreen()
