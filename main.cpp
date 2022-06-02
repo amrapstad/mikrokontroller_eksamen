@@ -10,7 +10,7 @@
 #include "HTS221Sensor.h"
 
 // Define numbers
-#define REFRESH_RATE       1000ms
+#define REFRESH_RATE       100ms
 #define BUF_LENGTH          256
 
 
@@ -38,7 +38,8 @@ int current_hour = 0;
 int current_minute = 0;
 int alarm_hour = 0;
 int alarm_minute = 0;
-bool alarm_active = false;
+bool alarm_turned_on = false;
+bool alarm_enabled = true;
 int buttonMode = 0;
 bool inAlarmMode = false;
 bool inTemperatureState = true;
@@ -63,8 +64,6 @@ int main()
     // RTC time that we will use to display current time and etc.
     char time_buffer[BUF_LENGTH] = { 0 };
     struct tm *time_struct = nullptr;
-
-    printf("%d\n", alarm_active);
 
     if(!network)
     {
@@ -107,9 +106,11 @@ int main()
         current_hour = time_struct->tm_hour;
         current_minute = time_struct->tm_min;
 
-        if(alarm_active && current_hour == alarm_hour && current_minute == alarm_minute)
-            {/*BEEP BOOP*/}
-
+        // Sound the alarm when the current time mathces the alarm time
+        if(alarm_turned_on && alarm_enabled && current_hour == alarm_hour && current_minute == alarm_minute)
+        {
+            printf("ALARM IS OFF MOTHERCUKER!\n");
+        }
 
         led1 = !led1;
 
@@ -122,7 +123,7 @@ int main()
         {
             case 0:
                 if(inAlarmMode && button2.read())
-                    alarm_active= true;
+                    alarm_turned_on= true;
                 if(button2.read())
                     inAlarmMode = !inAlarmMode;
 
@@ -159,12 +160,64 @@ void defaultScreen(char *time_buffer, struct tm *time_struct)
 {
     strftime(time_buffer, BUF_LENGTH, "%a %d %b %H:%M", time_struct);
 
+    if(button5.read())
+    {
+        alarm_turned_on = false;
+        alarm_enabled = false;
+        alarm_hour = 0;
+        alarm_minute = 0;
+    }
 
+    // Different outcomes depending on the alarm state
+    // First row is always
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.printf("%s", time_buffer);
     lcd.setCursor(0, 1);
-    lcd.printf("Alarm");
+    // Active alarm set will show time
+    if(alarm_turned_on)
+    {
+        // Will show only time
+        if(alarm_enabled)
+        {
+            if(alarm_hour < 10)
+            {
+                if(alarm_minute < 10)
+                    lcd.printf("Alarm 0%d:0%d", alarm_hour, alarm_minute); 
+                else
+                    lcd.printf("Alarm 0%d:%d", alarm_hour, alarm_minute);
+            }
+            else
+            {
+                if(alarm_minute < 10)
+                    lcd.printf("Alarm %d:0%d", alarm_hour, alarm_minute);
+                else
+                    lcd.printf("Alarm %d:%d", alarm_hour, alarm_minute);
+            }
+        }
+        // Will have the "OFF" text between "Alarm" and time
+        else
+        {
+            if(alarm_hour < 10)
+            {
+                if(alarm_minute < 10)
+                    lcd.printf("Alarm Off 0%d:0%d", alarm_hour, alarm_minute); 
+                else
+                    lcd.printf("Alarm Off 0%d:%d", alarm_hour, alarm_minute);
+            }
+            else
+            {
+                if(alarm_minute < 10)
+                    lcd.printf("Alarm Off %d:0%d", alarm_hour, alarm_minute);
+                else
+                    lcd.printf("Alarm Off %d:%d", alarm_hour, alarm_minute);
+            }
+        }
+            
+    }
+    // Will only show "Alarm" on the screen since there isn't any alarm enabled
+    else
+        lcd.printf("Alarm");
 }
 
 
@@ -187,6 +240,9 @@ void alarmScreen()
             alarm_minute++;
     }
 
+    if(button5.read())
+        alarm_enabled = !alarm_enabled;
+
     lcd.clear();
     lcd.setCursor(0, 0);
     if(alarm_hour < 10)
@@ -203,6 +259,11 @@ void alarmScreen()
         else
             lcd.printf("Alarm %d:%d", alarm_hour, alarm_minute);
     }
+    lcd.setCursor(0, 1);
+    if(alarm_enabled)
+        lcd.printf("On");
+    else
+        lcd.printf("Off");
 }
 
 
