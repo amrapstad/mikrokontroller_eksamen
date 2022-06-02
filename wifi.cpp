@@ -56,7 +56,6 @@ nsapi_size_or_error_t send_request(Socket *socket, const char *request)
 
 
 
-
 nsapi_size_or_error_t read_response(Socket *socket, char *buffer,
                                     int buffer_length) {
 
@@ -177,9 +176,6 @@ void parse_json_to_epoch(char *input, int &unix_time)
 
 
 
-void testFunction() {
-    printf("Hello World\n");
-}
 
 
 
@@ -188,6 +184,14 @@ void testFunction() {
 
 void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
 {
+    network = NetworkInterface::get_default_instance();
+    if(!network)
+    {
+        printf("Failed to get the default network instance\n");
+        while(true);
+    }
+
+
     /*---News Feed Get Request---*/
     nsapi_size_or_error_t result;
 
@@ -254,8 +258,8 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
 
     // Only allocate 4000 bytes because we only need the first part of the response
     // AKA the first three headlines and dont need to give more size to the string
-    static constexpr size_t HTTP_RESPONSE_BUF_SIZE = 4000;
-    char response[HTTP_RESPONSE_BUF_SIZE] = { 0 };
+    static constexpr size_t HTTP_RESPONSE_BUF_SIZE = 3000;
+    static char response[HTTP_RESPONSE_BUF_SIZE] = { 0 };
     int remaining_bytes = HTTP_RESPONSE_BUF_SIZE;
     int received_bytes = 0;
 
@@ -268,12 +272,18 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
     }
 
     response[result] = '\0';
+
+    network->disconnect();
+    socket->close();
+    delete socket;
+    socket = nullptr;
+
    
     char *temp = std::move(response);
 
 /*--- Making three strings out of the XML response and storing them in the struct ---*/
-    char firstString[200] = { 0 };
-    char secondString[200] = { 0 };
+    char firstString[150] = { 0 };
+    char secondString[150] = { 0 };
     char thirdString[200] = { 0 };
     char startingItem[] = "<item>";
     char closingItem[] = "</item>";
@@ -342,6 +352,13 @@ void connect_to_BBC(NetworkInterface *network, struct NewsStrings *pNews)
 
 void connect_to_WorldTime(NetworkInterface *network, int &unix_time)
 {
+    network = NetworkInterface::get_default_instance();
+    if(!network)
+    {
+        printf("Failed to get the default network instance\n");
+        while(true);
+    }
+
     nsapi_size_or_error_t result;
 
       printf("Gathering Time Information..\n");
@@ -425,6 +442,7 @@ void connect_to_WorldTime(NetworkInterface *network, int &unix_time)
 
     printf("Unix time: %d\n", unix_time);
 
+    network->disconnect();
     socket->close();
     delete socket;
     socket = nullptr;
@@ -435,7 +453,18 @@ void connect_to_WorldTime(NetworkInterface *network, int &unix_time)
 
 
 
+
+
+
+
+
 void getWeather(NetworkInterface *network, float &weatherTemperature, std::string &weatherDesc) {
+    network = NetworkInterface::get_default_instance();
+    if(!network)
+    {
+        printf("Failed to get the default network instance\n");
+        while(true);
+    }
 
   nsapi_size_or_error_t result;
 

@@ -43,11 +43,6 @@ struct Alarm
     bool sounding_alarm;
 };
 
-struct Data
-{
-    struct NewsStrings *pNews = new NewsStrings;
-    NetworkInterface *network = NetworkInterface::get_default_instance();
-};
 
 ////GLOBAL BARIABLES////
 int unix_time = 0;
@@ -55,14 +50,22 @@ time_t rtc_timer;
 int buttonMode = 0;
 bool in_alarm_screen = false;
 bool inTemperatureState = true;
+int current_hour = 0;
+int current_minute = 0;
 float humidity;
 float temperature;
 float weatherTemperature;
 std::string weatherDesc;
-Data data;
+NetworkInterface *network;
 
-int current_hour = 0;
-int current_minute = 0;
+////STRUCTS////
+struct NewsStrings pNews; //= new NewsStrings;
+
+//////Threads////////////
+Thread networkUpdateBBC;
+Thread networkUpdateTIME;
+Thread networkUpdateWeather;
+Mutex mutex;
 
 
 
@@ -73,10 +76,12 @@ void temperatureScreen();
 void weatherScreen();
 void newsScreen(const char string[], size_t stringSize);
 void getWeather(NetworkInterface *network);
-void thread1(Data *data);
-void thread2(Data *data);
-void thread3(Data *data);
 
+
+////THREADS////
+void thread1();         // BBC
+void thread2();         // Epoch time
+void thread3();         // Weather forecast
 
 
 int main()
@@ -93,23 +98,18 @@ int main()
     alarm_struct.turned_on = alarm_struct.sounding_alarm = false;
     alarm_struct.enabled = true;
     buzzer.write(0.f);
-
-    if(!data.network)
-    {
-        printf("Failed to get the default network instance\n");
-        while(true);
-    }
     
-    
-    //////Threads////////////
-    //Thread networkUpdateBBC;
-    //Thread networkUpdateTIME;
-    Thread networkUpdateWeather;
-    //networkUpdateBBC.start(callback(thread1, &data));
-    //networkUpdateTIME.start(callback(thread2, &data));
-    networkUpdateWeather.start(callback(thread3, &data));
+    networkUpdateBBC.start(callback(thread1));
+    networkUpdateTIME.start(callback(thread2));
+    networkUpdateWeather.start(callback(thread3));
 
+    networkUpdateBBC.join();
+    networkUpdateTIME.join();
+    networkUpdateWeather.join();
 
+    // Since the epoch time is UTC/GMT, we need to adjust so it mathces our timezone
+    // We do this by adding 2 hours or 7200 seconds (60 * 60 * 2 = 7200) to the epcoh time
+    set_time(unix_time + 7200);
 
 
     //////Fetching Weather Information///////////
@@ -122,13 +122,11 @@ int main()
     //data.network = NetworkInterface::get_default_instance();
     //connect_to_WorldTime(data.network, unix_time);
 
-    // Since the epoch time is UTC/GMT, we need to adjust so it mathces our timezone
-    // We do this by adding 2 hours or 7200 seconds (60 * 60 * 2 = 7200) to the epcoh time
-    set_time(unix_time + 7200);
 
-    // Will show the epoch time for 5 seconds and initialize the display
-    // The last print will print the actual current epoch time by subtracting the offset we added earlier
+    // Initialize lcd display
     lcd.init();
+    // Will show the epoch time for 5 seconds
+    // The last print will print the actual current epoch time by subtracting the offset we added earlier
     int time_end = unix_time + 7200 + 5;
     while(rtc_timer < time_end)
     {
@@ -190,7 +188,7 @@ int main()
                 break;
 
             case 3:
-                newsScreen(data.pNews->headlineString, strlen(data.pNews->headlineString));
+                newsScreen(pNews.headlineString, strlen(pNews.headlineString));
                 break;
 
         }
@@ -464,38 +462,27 @@ void newsScreen(const char inputString[], size_t stringSize)
     }
 }
 
-
-
-
-
-void thread1(Data *data)
+// Thread to gather BBC news
+void thread1()
 {
-    while(true)
-    {
-        // Connect to BBCs RSS feed to get news headlines
-        // WILL BE DONE IN A THREAD LATER
-        //connect_to_BBC(data->network, data->pNews);
-        //testFunction();
-        ThisThread::sleep_for(1000000ms);
-    }
+    mutex.lock();
+    connect_to_BBC(network, &pNews);
+    mutex.unlock();
 }
 
-
-void thread2(Data *data)
+// Thread to gather UNIX epoch time
+void thread2()
 {
-    while(true)
-    {
-        ThisThread::sleep_for(60000ms);
-    }
+    mutex.lock();
+    connect_to_WorldTime(network, unix_time);
+    mutex.unlock();
 }
 
-
-void thread3(Data *data)
+// Thread to gather weather forecast
+void thread3()
 {
-    while(true)
-    {
-        getWeather(data->network, weatherTemperature, weatherDesc);
-        ThisThread::sleep_for(120000ms);
-    }
+    mutex.lock();
+    getWeather(network, weatherTemperature, weatherDesc);
+    mutex.unlock();
 }
 
