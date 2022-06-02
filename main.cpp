@@ -60,7 +60,6 @@ void alarmScreen(struct Alarm &alarm_struct);
 void temperatureScreen();
 void weatherScreen();
 void newsScreen(const char string[], size_t stringSize);
-void sound_the_alarm();
 
 
 int main()
